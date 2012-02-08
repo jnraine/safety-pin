@@ -1,8 +1,10 @@
 class JCR
   class Node
     def self.find(path)
-      raise ArgumentError unless path.start_with?("/")
-      Node.new(session.get_node(path))
+      raise ArgumentError unless path.to_s.start_with?("/")
+      Node.new(session.get_node(path.to_s))
+    rescue javax.jcr.PathNotFoundException
+      nil
     end
     
     def self.session

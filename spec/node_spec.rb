@@ -6,15 +6,26 @@ describe JCR::Node do
   end
   
   context ".find" do
-    it "can retrieve a node given a path" do
-      node = JCR::Node.find("/content")
-      node.should be_a(JCR::Node)
-      node.path.should eql("/content")
+    context "given a node name" do
+      context "that exists" do
+        it "should return a node with a matching path" do
+          node = JCR::Node.find("/content")
+          node.should be_a(JCR::Node)
+          node.path.should eql("/content")
+        end
+      end
+    
+      context "that doesn't exist" do
+        it "should return nil" do
+          node = JCR::Node.find("/foo/bar/baz")
+          node.should be_nil
+        end
+      end
     end
     
-    it "complains if the path isn't an absolute path" do
-      lambda { node = JCR::Node.find("content") }.should raise_exception(ArgumentError)
-    end
+      it "complains if the path isn't an absolute path" do
+        lambda { node = JCR::Node.find("content") }.should raise_exception(ArgumentError)
+      end
   end
   
   context ".session" do
