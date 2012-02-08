@@ -1,0 +1,26 @@
+require 'java'
+require 'jcr/node'
+
+class JCR
+  include_class('java.lang.String') {|package,name| "J#{name}" }
+  include_class 'javax.jcr.SimpleCredentials'
+  include_class 'org.apache.jackrabbit.commons.JcrUtils'
+
+  def self.login(opts = {})
+    repository = JcrUtils.get_repository(parse_hostname(opts[:hostname]))
+    creds = SimpleCredentials.new(opts[:username], JString.new(opts[:password]).to_char_array)
+    @@session = repository.login(creds)
+  end
+  
+  def self.session
+    @@session
+  end
+  
+  def self.parse_hostname(hostname)
+    if hostname.end_with?("/crx/server")
+      hostname
+    else
+      hostname + "/crx/server"
+    end
+  end
+end
