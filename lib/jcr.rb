@@ -1,3 +1,5 @@
+$: << File.dirname(__FILE__)
+
 require 'java'
 require 'jcr/node'
 
@@ -10,6 +12,19 @@ class JCR
     repository = JcrUtils.get_repository(parse_hostname(opts[:hostname]))
     creds = SimpleCredentials.new(opts[:username], JString.new(opts[:password]).to_char_array)
     @@session = repository.login(creds)
+  end
+  
+  def self.logout
+    session.logout
+    not session.live?
+  end
+  
+  def self.logged_in?
+    session.live?
+  end
+  
+  def self.logged_out?
+    not logged_in?
   end
   
   def self.session

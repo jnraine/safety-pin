@@ -40,7 +40,4 @@ class JCR
       @name ||= j_node.name
     end
   end
-  
-  # class NodeException < Exception
-  # end
 end

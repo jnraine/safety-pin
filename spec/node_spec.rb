@@ -5,6 +5,10 @@ describe JCR::Node do
     JCR.login(:hostname => "http://localhost:4502", :username => "admin", :password => "admin")
   end
   
+  after do
+    JCR.logout
+  end
+  
   context ".find" do
     context "given a node name" do
       context "that exists" do
