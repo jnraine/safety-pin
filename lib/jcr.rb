@@ -39,4 +39,8 @@ class JCR
       hostname + "/crx/server"
     end
   end
+  
+  def self.dev_login
+    login(:hostname => "http://localhost:4502", :username => "admin", :password => "admin")
+  end
 end
