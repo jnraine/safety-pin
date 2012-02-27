@@ -88,7 +88,7 @@ class JCR
       when "Date"
         Time.at(value.date.time.time / 1000)
       when "Name"
-        "Name wuz here" #"Name: #{property.string}"
+        value.string # Not sure if these should be handled differently
       else
         raise PropertyTypeError.new("Unknown property type: #{property_type}")
       end
@@ -149,6 +149,10 @@ class JCR
     
     def value_factory
       session.value_factory
+    end
+    
+    def build
+      
     end
   end
   

@@ -133,6 +133,10 @@ describe JCR::Node do
       node.read_attribute("prop-date").to_s.should eql(time.to_s)
     end
     
+    it "should return the string value of a name property" do
+      JCR::Node.find("/")["jcr:primaryType"].should eql("rep:root")
+    end
+    
     context "given a multi-value property" do
       it "should return an array of values" do
         node["multi-value"] = ["one", "two"]
@@ -177,11 +181,6 @@ describe JCR::Node do
         end
       end
     end
-    
-    # it "should delegate multi-value writes to self#write_multi_value_attribute" do
-    #   node.should_receive(:write_multi_value_attribute).once
-    #   node.write_attribute("multi-value", ["one", "two", "three"])
-    # end
   end
   
   context "#reload" do
@@ -249,27 +248,26 @@ describe JCR::Node do
   end
 
   context "#properties" do
-    # it "should return hash of all properties" do
-    #   JCR::Node.find("/content").properties.should eql({})
-    # end
+    it "should return hash of all properties" do
+      JCR::Node.find("/").properties.should eql({"jcr:primaryType"=>"rep:root", "sling:target"=>"/index.html", "sling:resourceType"=>"sling:redirect", "jcr:mixinTypes"=>["rep:AccessControllable"]})
+    end
   end
 
-  context "#create!" do
+  context "#build" do
     let(:node) { JCR::Node.find("/content") }
     
     context "given no arguments" do
       it "should build and return a property-less, unsaved nt:unstructured child node" do
-        # child_node = node.build("/content/foo")
-        # child_node.should be_new
-        # child_node.attributes.should eql({})
+        child_node = node.build("/content/foo")
+        child_node.should be_new
+        child_node.attributes.should eql({})
       end
     end
   end
   
   context "#value_factory" do
     it "should return a value factory instance" do
-      include_class "javax.jcr.ValueFactory"
-      JCR::Node.find("/content").value_factory.should be_a(ValueFactory)
+      JCR::Node.find("/content").value_factory.should be_a(Java::JavaxJcr::ValueFactory)
     end
   end
   
