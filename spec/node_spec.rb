@@ -87,22 +87,25 @@ describe JCR::Node do
     end
   end
   
-  context "#save" do    
-    it "should save the changes to the JCR" do
-      node = JCR::Node.create("/content/foo")
-      node["bar"] = "baz"
-      node.save
-      node.reload
-      node["bar"].should eql("baz")
-      node.destroy
-    end
+  describe "#save" do
+    context "on an existing node with changes" do
+      before do 
+        @node = JCR::Node.create("/content/foo")
+        @node["bar"] = "baz"
+      end
+      
+      after { @node.destroy }
+    
+      it "should save the changes to the JCR" do
+        @node.save
+        @node.reload
+        @node["bar"].should eql("baz")
+      end
   
-    it "should return true if the save was successful" do
-      node = JCR::Node.create("/content/foo")
-      node["bar"] = "baz"
-      save_successful = node.save
-      (save_successful and not node.changed?).should be_true
-      node.destroy
+      it "should return true if the save was successful" do
+        save_successful = @node.save
+        (save_successful and not @node.changed?).should be_true
+      end
     end
     
     context "on a new node" do      
@@ -125,54 +128,47 @@ describe JCR::Node do
     end
   end
   
-  context "#read_attribute" do
-    it "should return the string value of a string property" do
-      node = JCR::Node.create("/content/foo")
-      node["foo"] = "bar"
-      node.read_attribute("foo").should eql("bar")
-      node.destroy
-    end
+  describe "#read_attribute" do
+    context "on an existing node" do
+      before { @node = JCR::Node.create("/content/foo") }
+      after { @node.destroy }
     
-    it "should return the boolean value of a boolean property" do
-      node = JCR::Node.create("/content/foo")
-      node["foo"] = true
-      node.read_attribute("foo").should eql(true)
-      node.destroy
-    end
+      it "should return the string value of a string property" do
+        @node["foo"] = "bar"
+        @node.read_attribute("foo").should eql("bar")
+      end
     
-    it "should return the double value of a double (or Ruby float) property" do
-      node = JCR::Node.create("/content/foo")
-      node["foo"] = 3.14
-      node.read_attribute("foo").should eql(3.14)
-      node.destroy
-    end
+      it "should return the boolean value of a boolean property" do
+        @node["foo"] = true
+        @node.read_attribute("foo").should eql(true)
+      end
     
-    it "should return the long value of a long (or Ruby Fixnum) property" do
-      node = JCR::Node.create("/content/foo")
-      node["foo"] = 42
-      node.read_attribute("foo").should eql(42)
-      node.destroy
-    end
+      it "should return the double value of a double (or Ruby float) property" do
+        @node["foo"] = 3.14
+        @node.read_attribute("foo").should eql(3.14)
+      end
     
-    it "should return the time value of a date property" do
-      node = JCR::Node.create("/content/foo")
-      time = Time.now
-      node["foo"] = time
-      node.read_attribute("foo").to_s.should eql(time.to_s)
-      node.destroy
+      it "should return the long value of a long (or Ruby Fixnum) property" do
+        @node["foo"] = 42
+        @node.read_attribute("foo").should eql(42)
+      end
+    
+      it "should return the time value of a date property" do
+        time = Time.now
+        @node["foo"] = time
+        @node.read_attribute("foo").to_s.should eql(time.to_s)
+      end
+      
+      context "given a multi-value property" do
+        it "should return an array of values" do
+          @node["foo"] = ["one", "two"]
+          @node.read_attribute("foo").should eql(["one", "two"])
+        end
+      end
     end
     
     it "should return the string value of a name property" do
       JCR::Node.find("/")["jcr:primaryType"].should eql("rep:root")
-    end
-    
-    context "given a multi-value property" do
-      it "should return an array of values" do
-        node = JCR::Node.create("/content/foo")
-        node["foo"] = ["one", "two"]
-        node.read_attribute("foo").should eql(["one", "two"])
-        node.destroy
-      end
     end
     
     it "should throw an exception when accessing a non-existent (nil) property" do
@@ -180,26 +176,25 @@ describe JCR::Node do
     end
   end
   
-  context "#write_attribute" do    
+  context "#write_attribute" do
+    before { @node = JCR::Node.create("/content/foo") }
+    after { @node.destroy }
+     
     context "given a single value" do
       it "should set a string property value" do
-        node = JCR::Node.create("/content/foo")
-        node.write_attribute("foo", "bar")
-        node.save
-        node.reload
-        node["foo"].should eql("bar")
-        node.destroy
+        @node.write_attribute("foo", "bar")
+        @node.save
+        @node.reload
+        @node["foo"].should eql("bar")
       end
     
       context "given a Time object" do
         it "should set a date property value" do
-          node = JCR::Node.create("/content/foo")
           time = Time.now
-          node.write_attribute("foo", time)
-          node.save
-          node.reload
-          node["foo"].to_s.should eql(time.to_s)
-          node.destroy
+          @node.write_attribute("foo", time)
+          @node.save
+          @node.reload
+          @node["foo"].to_s.should eql(time.to_s)
         end
       end
     end
@@ -207,42 +202,36 @@ describe JCR::Node do
     context "given an array of values" do
       context "of the same type" do
         it "should set a multi-value string array" do
-          node = JCR::Node.create("/content/foo")
-          node.write_attribute("foo", ["one", "two"])
-          node.save
-          node.reload
-          node["foo"].should eql(["one", "two"])
-          node.destroy
+          @node.write_attribute("foo", ["one", "two"])
+          @node.save
+          @node.reload
+          @node["foo"].should eql(["one", "two"])
         end
       end
     end
   end
   
   context "#reload" do
-    let(:node) { JCR::Node.find("/content/sfu/jcr:content/test") }
-    let(:unique_name) { Time.now.to_i.to_s }
-
+    before { @node = JCR::Node.create("/content/foo") }
+    after { @node.destroy }
+    
     it "should discard pending changes" do
-      node = JCR::Node.create("/content/foo")
-      node["foo"] = "bar"
-      node.reload
-      lambda { node.read_attribute("foo") }.should raise_error(JCR::NilPropertyError)
-      node.destroy
+      @node["foo"] = "bar"
+      @node.reload
+      lambda { @node.read_attribute("foo") }.should raise_error(JCR::NilPropertyError)
     end
     
     it "should not discard changes for another node" do
-      node = JCR::Node.create("/content/foo")
-      node["bar"] = "baz"
+      @node["bar"] = "baz"
       another_node = JCR::Node.find("/content")
       another_node["bar"] = "baz"
-      node.reload
-      lambda { node["bar"] }.should raise_error(JCR::NilPropertyError)
+      @node.reload
+      lambda { @node["bar"] }.should raise_error(JCR::NilPropertyError)
       another_node["bar"].should eql("baz")
-      node.destroy
     end
   end
   
-  context "#[]" do
+  describe "#[]" do
     it "should return the value of a given property name" do
       node = JCR::Node.create("/content/foo")
       node.write_attribute("bar","baz")
@@ -252,7 +241,7 @@ describe JCR::Node do
     end
   end
   
-  context "#[]=" do    
+  describe "#[]=" do    
     it "should set the value of a given property name" do
       node = JCR::Node.create("/content/foo")
       node.write_attribute("bar","baz")
