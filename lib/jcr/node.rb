@@ -38,6 +38,7 @@ class JCR
     def self.create(path, node_type = nil)
       node = self.build(path, node_type)
       node.save
+      node
     end
 
     def initialize(j_node)
@@ -177,6 +178,12 @@ class JCR
     
     def value_factory
       session.value_factory
+    end
+    
+    def destroy
+      parent_j_node = j_node.parent
+      j_node.remove
+      parent_j_node.save
     end
   end
   

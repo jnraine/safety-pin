@@ -280,7 +280,7 @@ describe JCR::Node do
       end
       
       context "and a node type string" do
-        it "should create a node of the given type" do
+        it "should create an unsaved node of the given type" do
           node = JCR::Node.build("/content/foo", "nt:folder")
           node.should be_new
           node["jcr:primaryType"].should eql("nt:folder")
@@ -311,8 +311,7 @@ describe JCR::Node do
     context "given a path" do
       it "should build and save a node" do
         path = "/content/sfu/jcr:content/test/normal-#{Time.now.to_i.to_s}"
-        JCR::Node.create(path)
-        JCR::Node.find(path).should_not be_nil
+        JCR::Node.create(path).should be_a(JCR::Node)
       end
     end
     
@@ -346,6 +345,25 @@ describe JCR::Node do
       node.save
       property = node.j_node.get_property("single-value")
       node.property_is_multi_valued?(property).should be_false
+    end
+  end
+  
+  describe "#destroy" do
+    it "should remove node from JCR" do
+      path = "/content/foo"
+      node = JCR::Node.create(path)
+      node.destroy
+      JCR::Node.find(path).should be_nil
+    end
+    
+    it "should save changes in parent node" do
+      parent_node = JCR::Node.create("/content/foo")
+      node = JCR::Node.create("/content/foo/bar")
+      parent_node["baz"] = "qux"
+      parent_node.should be_changed
+      node.destroy
+      parent_node.should_not be_changed
+      parent_node.destroy
     end
   end
 end
