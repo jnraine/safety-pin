@@ -39,6 +39,18 @@ describe JCR::Node do
     end
   end
   
+  context "#session" do
+    it "should return a session" do
+      JCR::Node.find("/content").session.should be_a(Java::JavaxJcr::Session)
+    end
+    
+    it "should cache session in an instance variable" do
+      node = JCR::Node.find("/content")
+      node.session
+      node.instance_eval { @session }.should be_a(Java::JavaxJcr::Session)
+    end
+  end
+  
   context "#children" do
     it "should return an array of child nodes" do
       JCR::Node.find("/content").children.first.should be_a(JCR::Node)
@@ -121,6 +133,13 @@ describe JCR::Node do
       node.read_attribute("prop-date").to_s.should eql(time.to_s)
     end
     
+    context "given a multi-value property" do
+      it "should return an array of values" do
+        node["multi-value"] = ["one", "two"]
+        node.read_attribute("multi-value").should eql(["one", "two"])
+      end
+    end
+    
     it "should throw an exception when accessing a non-existent (nil) property" do
       lambda { node.read_attribute("foo-bar-baz") }.should raise_error(JCR::NilPropertyError)
     end
@@ -128,22 +147,41 @@ describe JCR::Node do
   
   context "#write_attribute" do
     let(:node) { JCR::Node.find("/content/sfu/jcr:content/test") }
-    it "should set a string property value" do
-      node.write_attribute("prop1", "Foo")
-      node.save
-      node.reload
-      node["prop1"].should eql("Foo")
-    end
     
-    context "given a Time object" do
-      it "should set a date property value" do
-        time = Time.now
-        node.write_attribute("prop-date", time)
+    context "given a single value" do
+      it "should set a string property value" do
+        node.write_attribute("prop1", "Foo")
         node.save
         node.reload
-        node["prop-date"].to_s.should eql(time.to_s)
+        node["prop1"].should eql("Foo")
+      end
+    
+      context "given a Time object" do
+        it "should set a date property value" do
+          time = Time.now
+          node.write_attribute("prop-date", time)
+          node.save
+          node.reload
+          node["prop-date"].to_s.should eql(time.to_s)
+        end
       end
     end
+
+    context "given an array of values" do
+      context "of the same type" do
+        it "should set a multi-value string array" do
+          node.write_attribute("multi-value", ["one", "two", "three"])
+          node.save
+          node.reload
+          node["multi-value"].should eql(["one", "two", "three"])
+        end
+      end
+    end
+    
+    # it "should delegate multi-value writes to self#write_multi_value_attribute" do
+    #   node.should_receive(:write_multi_value_attribute).once
+    #   node.write_attribute("multi-value", ["one", "two", "three"])
+    # end
   end
   
   context "#reload" do
@@ -211,9 +249,9 @@ describe JCR::Node do
   end
 
   context "#properties" do
-    it "should return hash of all properties" do
-      JCR::Node.find("/content").properties.should eql({})
-    end
+    # it "should return hash of all properties" do
+    #   JCR::Node.find("/content").properties.should eql({})
+    # end
   end
 
   context "#create!" do
@@ -225,6 +263,31 @@ describe JCR::Node do
         # child_node.should be_new
         # child_node.attributes.should eql({})
       end
+    end
+  end
+  
+  context "#value_factory" do
+    it "should return a value factory instance" do
+      include_class "javax.jcr.ValueFactory"
+      JCR::Node.find("/content").value_factory.should be_a(ValueFactory)
+    end
+  end
+  
+  describe "#property_is_multi_valued" do
+    it "should return true if property is multi-valued" do
+      node = JCR::Node.find("/content/sfu/jcr:content/test")
+      node["multi-value"] = ["bar", "baz"]
+      node.save
+      property = node.j_node.get_property("multi-value")
+      node.property_is_multi_valued?(property).should be_true
+    end
+    
+    it "should return false if property is not multi-valued" do
+      node = JCR::Node.find("/content/sfu/jcr:content/test")
+      node["single-value"] = "bar"
+      node.save
+      property = node.j_node.get_property("single-value")
+      node.property_is_multi_valued?(property).should be_false
     end
   end
 end

@@ -3,6 +3,8 @@ class JCR
     include_class 'javax.jcr.PropertyType'
     include_class 'java.util.Calendar'
     include_class 'java.util.Date'
+
+    attr_reader :j_node
     
     def self.find(path)
       raise ArgumentError unless path.to_s.start_with?("/")
@@ -15,14 +17,16 @@ class JCR
       JCR.session
     end
     
-    attr_reader :j_node
-    
     def initialize(j_node)
       @j_node = j_node
     end
     
     def path
       @path ||= j_node.path
+    end
+    
+    def session
+      @session ||= JCR.session
     end
     
     def children
@@ -46,29 +50,60 @@ class JCR
     
     def read_attribute(name)
       property = j_node.get_property(name)
-      property_type = PropertyType.name_from_value(property.type)
-      case property_type
-      when "String"
-        property.string
-      when "Boolean"
-        property.boolean
-      when "Double"
-        property.double
-      when "Long"
-        property.long
-      when "Date"
-        Time.at(property.date.time.time / 1000)
-      when "Name"
-        "Name wuz here" #"Name: #{property.string}"
+      if property_is_multi_valued?(property)
+        retrieve_property_multi_value(property)
       else
-        raise PropertyTypeError.new("Unknown property type: #{property_type}")
+        retrieve_property_value(property)
       end
     rescue javax.jcr.PathNotFoundException
       raise NilPropertyError.new("#{name} property not found on node")
     end
     
+    def property_is_multi_valued?(property)
+      property.values
+      true
+    rescue javax.jcr.ValueFormatException
+      false
+    end
+    
+    def retrieve_property_multi_value(property)
+      property.values.map {|value| retrieve_value(value) }
+    end
+    
+    def retrieve_property_value(property)
+      retrieve_value(property.value)
+    end
+    
+    def retrieve_value(value)
+      property_type = PropertyType.name_from_value(value.type)
+      case property_type
+      when "String"
+        value.string
+      when "Boolean"
+        value.boolean
+      when "Double"
+        value.double
+      when "Long"
+        value.long
+      when "Date"
+        Time.at(value.date.time.time / 1000)
+      when "Name"
+        "Name wuz here" #"Name: #{property.string}"
+      else
+        raise PropertyTypeError.new("Unknown property type: #{property_type}")
+      end
+    end
+    
     def write_attribute(name, value)
-      if value.is_a? Time or value.is_a? Date
+      if value.is_a? Array
+        values = value
+        val_fact = value_factory
+        j_values = []
+        values.each do |value|
+          j_values << val_fact.create_value(value.to_java)
+        end
+        j_node.set_property(name, j_values.to_java(Java::JavaxJcr::Value))
+      elsif value.is_a? Time or value.is_a? Date
         calendar_value = Calendar.instance
         calendar_value.set_time(value.to_java)
         j_node.set_property(name, calendar_value)
@@ -110,6 +145,10 @@ class JCR
         props[prop_name] = self[prop_name]
       end
       props
+    end
+    
+    def value_factory
+      session.value_factory
     end
   end
   
