@@ -102,6 +102,24 @@ describe JCR::Node do
       node.reload
       (save_successful and not node.changed?).should be_true
     end
+    
+    context "on a new node" do
+      let (:random_number) { Time.now.to_i.to_s }
+      
+      it "should save the node" do
+        node = JCR::Node.build("/content/sfu/jcr:content/#{random_number}")
+        node.save.should be_true
+      end
+      
+      it "should save changes in parent node" do
+        parent_node = JCR::Node.find("/content/sfu/jcr:content/test")
+        node = JCR::Node.build("/content/sfu/jcr:content/test/unique-#{random_number}")
+        parent_node["foo"] = "baz-#{random_number}"
+        parent_node.should be_changed
+        node.save
+        parent_node.should_not be_changed
+      end
+    end
   end
   
   context "#read_attribute" do
@@ -253,14 +271,56 @@ describe JCR::Node do
     end
   end
 
-  context "#build" do
-    let(:node) { JCR::Node.find("/content") }
-    
-    context "given no arguments" do
+  describe ".build" do
+    context "given an absolute path" do
       it "should build and return a property-less, unsaved nt:unstructured child node" do
-        child_node = node.build("/content/foo")
-        child_node.should be_new
-        child_node.attributes.should eql({})
+        node = JCR::Node.build("/content/foo")
+        node.should be_new
+        node.properties.should eql({"jcr:primaryType" => "nt:unstructured"})
+      end
+      
+      context "and a node type string" do
+        it "should create a node of the given type" do
+          node = JCR::Node.build("/content/foo", "nt:folder")
+          node.should be_new
+          node["jcr:primaryType"].should eql("nt:folder")
+        end
+      end
+
+      context "that already exists" do
+        it "should raise an error" do
+          lambda { JCR::Node.build("/content") }.should raise_error(JCR::NodeError)
+        end
+      end
+    end
+    
+    context "given an absolute path with a non-existent parent node" do
+      it "should raise an error" do
+        lambda { JCR::Node.build("/content/foo/bar/baz") }.should raise_error(JCR::NodeError)
+      end
+    end
+    
+    context "given a relative path" do
+      it "should raise an error" do
+        lambda { JCR::Node.build("content/foo") }.should raise_error(ArgumentError)
+      end
+    end
+  end
+  
+  describe ".create" do
+    context "given a path" do
+      it "should build and save a node" do
+        path = "/content/sfu/jcr:content/test/normal-#{Time.now.to_i.to_s}"
+        JCR::Node.create(path)
+        JCR::Node.find(path).should_not be_nil
+      end
+    end
+    
+    context "given a path and a node type" do
+      it "should build and save a node of the specified type" do
+        path = "/content/sfu/jcr:content/test/folder-#{Time.now.to_i.to_s}"
+        JCR::Node.create(path, "nt:folder")
+        JCR::Node.find(path).should_not be_nil
       end
     end
   end

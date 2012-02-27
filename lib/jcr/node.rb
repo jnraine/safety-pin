@@ -17,6 +17,29 @@ class JCR
       JCR.session
     end
     
+    def self.build(path, node_type = nil)
+      node_type ||= "nt:unstructured"
+      rel_path = nil
+      if path.start_with?("/")
+        rel_path = path.sub("/","")
+      else
+        raise ArgumentError.new("Given path not absolute: #{path}")
+      end
+      
+      if session.root_node.has_node(rel_path)
+        raise NodeError.new("Node already exists at path: #{path}")
+      else
+        self.new(session.root_node.add_node(rel_path, node_type))
+      end
+    rescue javax.jcr.PathNotFoundException => e
+      raise NodeError.new("Cannot add a new node to a non-existing parent at #{path}")
+    end
+    
+    def self.create(path, node_type = nil)
+      node = self.build(path, node_type)
+      node.save
+    end
+
     def initialize(j_node)
       @j_node = j_node
     end
@@ -113,8 +136,13 @@ class JCR
     end
     
     def save
-      j_node.save
-      not j_node.modified?
+      if new?
+        j_node.parent.save
+      else
+        j_node.save
+      end
+      
+      not changed?
     end
     
     def reload
@@ -150,12 +178,9 @@ class JCR
     def value_factory
       session.value_factory
     end
-    
-    def build
-      
-    end
   end
   
+  class NodeError < Exception; end
   class PropertyTypeError < Exception; end
   class NilPropertyError < Exception; end
 end
