@@ -9,17 +9,18 @@ describe JCR::Query do
     JCR.logout
   end
 
-  context ".execute" do
-    # it "can execute a query" do
-    #   nodes = JCR::Query.execute("SELECT * FROM [cq:Page]")
-    #   nodes.first.should be_a JCR::Node
-    # end
+  describe ".execute" do
+    before do
+      @node = JCR::Node.create("/content/foo")
+      @node["bar"] = "baz"
+      @node.save
+    end
     
-    context "when a property is present" do
-      it "can lookup nodes based on the existence of a property property value" do
-        nodes = JCR::Query.execute("SELECT * FROM [nt:base] WHERE [nt:base].prop1 IS NOT NULL")
-        nodes.first["prop1"].should_not be_nil
-      end      
+    after { @node.destroy }
+    
+    it "can lookup nodes given a valid JCR-SQL2 query string" do
+      nodes = JCR::Query.execute("SELECT * FROM [nt:base] WHERE [nt:base].bar IS NOT NULL")
+      nodes.first["bar"].should_not be_nil
     end
   end
   
