@@ -119,6 +119,8 @@ class JCR
     end
     
     def write_attribute(name, value)
+      raise PropertyError.new("Illegal operation: cannot change jcr:primaryType property") if name == "jcr:primaryType"
+      
       if value.is_a? Array
         values = value
         val_fact = value_factory
@@ -170,10 +172,36 @@ class JCR
       props = {}
       prop_iter = j_node.properties
       while prop_iter.has_next
-        prop_name = prop_iter.next_property.name
-        props[prop_name] = self[prop_name]
+        prop = prop_iter.next_property        
+        unless prop.definition.protected?
+          prop_name = prop.name
+          props[prop_name] = self[prop_name]
+        end
       end
       props
+    end
+    
+    def protected_properties
+      props = {}
+      prop_iter = j_node.properties
+      while prop_iter.has_next
+        prop = prop_iter.next_property        
+        if prop.definition.protected?
+          prop_name = prop.name
+          props[prop_name] = self[prop_name]
+        end
+      end
+      props
+    end
+    
+    def properties=(new_props)
+      # props.each do |name, value|
+      #   self[name] = value
+      # end
+      property_names = (properties.keys + new_props.keys).uniq
+      property_names.each do |name|
+        self[name] = new_props[name]
+      end
     end
     
     def value_factory
@@ -181,13 +209,30 @@ class JCR
     end
     
     def destroy
+      path = self.path
       parent_j_node = j_node.parent
       j_node.remove
       parent_j_node.save
+      # raise NodeError.new("Unable to destroy #{path} node") unless self.class.find(path).nil?
+    rescue javax.jcr.RepositoryException => e
+      raise NodeError.new("Unable to destroy #{path} node: #{e.message}")
+    end
+    
+    def mixin_types
+      j_node.mixin_node_types.map(&:name)
+    end
+    
+    def add_mixin(mixin_name)
+      j_node.add_mixin(mixin_name)
+    end
+    
+    def remove_mixin(mixin_name)
+      j_node.remove_mixin(mixin_name)
     end
   end
   
   class NodeError < Exception; end
   class PropertyTypeError < Exception; end
   class NilPropertyError < Exception; end
+  class PropertyError < Exception; end
 end

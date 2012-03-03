@@ -209,6 +209,20 @@ describe JCR::Node do
         end
       end
     end
+    
+    context "given a null value" do
+      it "should remove the property" do
+        @node["foo"] = "bar"
+        @node.write_attribute("foo", nil)
+        lambda { @node["foo"] }.should raise_error(JCR::NilPropertyError)
+      end
+    end
+
+    context "changing jcr:primaryType property" do
+      it "should raise an error" do
+       lambda { @node.write_attribute("jcr:primaryType", "nt:folder") }.should raise_error(JCR::PropertyError)
+      end
+    end
   end
   
   context "#reload" do
@@ -274,9 +288,84 @@ describe JCR::Node do
     end
   end
 
-  context "#properties" do
-    it "should return hash of all properties" do
-      JCR::Node.find("/").properties.should eql({"jcr:primaryType"=>"rep:root", "sling:target"=>"/index.html", "sling:resourceType"=>"sling:redirect", "jcr:mixinTypes"=>["rep:AccessControllable"]})
+  describe "#properties" do
+    it "should return hash of all unprotected properties" do
+      JCR::Node.find("/").properties.should eql({"sling:target"=>"/index.html", "sling:resourceType"=>"sling:redirect"})
+    end
+  end
+  
+  describe "#properties=" do
+    before { @node = JCR::Node.create("/content/foo") }
+    after  { @node.destroy }
+    
+    it "should set the properties of a node" do
+      @node.properties = {"foo" => "bar"}
+      @node.properties.should eql({"foo" => "bar"})
+    end
+    
+    it "should set unset properties not specified in hash" do
+      @node["foo"] = "bar"
+      @node.properties = {"baz" => "qux"}
+      @node.properties.should eql({"baz" => "qux"})
+    end
+  end
+  
+  describe "#protected_properties" do
+    it "should return hash of all protected properties" do
+      JCR::Node.find("/").protected_properties.should eql({"jcr:primaryType"=>"rep:root", "jcr:mixinTypes"=>["rep:AccessControllable"]})
+    end
+  end
+  
+  describe "#mixin_types" do
+    before do
+      @node = JCR::Node.create("/content/foo")
+      @node.j_node.add_mixin("mix:created")
+      @node.save
+    end
+    
+    after  { @node.destroy }
+  
+    it "should return the mixin types of a node" do
+      @node.mixin_types.should eql(["mix:created"])
+    end
+  end
+  
+  describe "#add_mixin" do
+    before { @node = JCR::Node.create("/content/foo") }
+    after  { @node.destroy }
+  
+    it "should add a mixin type to node" do
+      @node.add_mixin("mix:created")
+      @node.save
+      @node.mixin_types.should eql(["mix:created"])
+    end
+    
+    it "should require a save before the mixin addition is detected" do
+      @node.add_mixin("mix:created")
+      @node.mixin_types.should eql([])
+    end
+  end
+  
+  describe "#remove_mixin" do
+    before do 
+      @node = JCR::Node.create("/content/foo") 
+      @node.add_mixin("mix:created")
+      @node.save
+    end
+    
+    after  { @node.destroy }
+    
+    it "should remove a mixin type from a node" do
+      @node.mixin_types.should eql(["mix:created"])
+      @node.remove_mixin("mix:created")
+      @node.save
+      @node.mixin_types.should eql([])
+    end
+    
+    it "should require a save before the mixin removal is detected" do
+      @node.remove_mixin("mix:created")
+      @node.mixin_types.should eql(["mix:created"])
+      @node.reload
     end
   end
 
@@ -285,7 +374,7 @@ describe JCR::Node do
       it "should build and return a property-less, unsaved nt:unstructured child node" do
         node = JCR::Node.build("/content/foo")
         node.should be_new
-        node.properties.should eql({"jcr:primaryType" => "nt:unstructured"})
+        node.properties.should eql({})
       end
       
       context "and a node type string" do
@@ -376,6 +465,21 @@ describe JCR::Node do
       node.destroy
       parent_node.should_not be_changed
       parent_node.destroy
+    end
+    
+    context "when it fails" do
+      before do
+        @node = JCR::Node.create("/content/foo")
+        @node.add_mixin("mix:created")
+        @node.save
+      end
+      
+      after { @node.reload; @node.destroy }
+      
+      it "should raise an error" do
+        @node.remove_mixin("mix:created") # make node unremoveable
+        lambda { @node.destroy }.should raise_error(JCR::NodeError)
+      end
     end
   end
 end
