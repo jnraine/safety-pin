@@ -3,6 +3,7 @@ $: << File.dirname(__FILE__)
 require 'java'
 require 'jcr/node'
 require 'jcr/query'
+require 'jcr/query/where_condition'
 
 class JCR
   include_class('java.lang.String') {|package,name| "J#{name}" }

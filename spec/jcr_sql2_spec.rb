@@ -52,7 +52,18 @@ describe "JCR-SQL2 example queries" do
   end
   
   it "can lookup a node based on a path" do
-    nodes = JCR::Query.execute("SELECT * FROM [nt:base] WHERE PATH([nt:base]) LIKE '/content/%'")
+    nodes = JCR::Query.execute("SELECT * FROM [nt:base] WHERE [jcr:path] LIKE '/content/%'")
     nodes.map(&:path).each {|name| name.starts_with?("/content").should be_true }
+  end
+  
+  it "can lookup a node based on node type" do
+    nodes = JCR::Query.execute("SELECT * FROM [cq:Page]")
+    nodes.first.primary_type.should eql("cq:Page")
+  end
+  
+  it "can lookup a node based on its node super type" do
+    nodes = JCR::Query.execute("SELECT * FROM [rep:Authorizable]")
+    primary_types = nodes.map(&:primary_type)
+    primary_types.should include("rep:User")
   end
 end

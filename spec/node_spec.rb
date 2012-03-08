@@ -482,4 +482,13 @@ describe JCR::Node do
       end
     end
   end
+  
+  describe "#primary_type" do
+    before { @node = JCR::Node.create("/content/foo") }
+    after { @node.destroy }
+    
+    it "should return the primary type of the node" do
+      @node.primary_type.should eql("nt:unstructured")
+    end
+  end
 end

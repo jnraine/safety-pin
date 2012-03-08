@@ -229,6 +229,10 @@ class JCR
     def remove_mixin(mixin_name)
       j_node.remove_mixin(mixin_name)
     end
+    
+    def primary_type
+      self["jcr:primaryType"]
+    end
   end
   
   class NodeError < Exception; end
