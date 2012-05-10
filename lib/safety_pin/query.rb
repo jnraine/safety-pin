@@ -1,4 +1,4 @@
-class JCR
+module SafetyPin
   class Query
     def self.execute(query_string)
       query = query_manager.create_query(query_string, "JCR-SQL2")

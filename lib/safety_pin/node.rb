@@ -1,4 +1,4 @@
-class JCR
+module SafetyPin
   class Node
     include_class 'javax.jcr.PropertyType'
     include_class 'java.util.Calendar'

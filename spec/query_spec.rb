@@ -1,23 +1,23 @@
 require 'spec_helper.rb'
 
-describe JCR::Query do
+describe SafetyPin::Query do
   before(:all) do
-    JCR.login(:hostname => "http://localhost:4502", :username => "admin", :password => "admin")
+    SafetyPin::JCR.login(:hostname => "http://localhost:4502", :username => "admin", :password => "admin")
   end
   
   before do
-    JCR.session.refresh(false)
+    SafetyPin::JCR.session.refresh(false)
   end
 
   after(:all) do
-    JCR.logout
+    SafetyPin::JCR.logout
   end
   
-  let(:query) { JCR::Query.new }
+  let(:query) { SafetyPin::Query.new }
 
   describe ".execute" do
     before do
-      @node = JCR::Node.create("/content/foo")
+      @node = SafetyPin::Node.create("/content/foo")
       @node["bar"] = "baz"
       @node.save
     end
@@ -25,7 +25,7 @@ describe JCR::Query do
     after { @node.destroy }
     
     it "should lookup nodes given a valid JCR-SQL2 query string" do
-      nodes = JCR::Query.execute("SELECT * FROM [nt:base] WHERE [nt:base].bar IS NOT NULL")
+      nodes = SafetyPin::Query.execute("SELECT * FROM [nt:base] WHERE [nt:base].bar IS NOT NULL")
       nodes.first["bar"].should_not be_nil
     end
   end
@@ -52,9 +52,11 @@ describe JCR::Query do
     
     it "should compile a query string to search for a node within a path" do
       query.within("/content/")
-      # query.instance_eval { within_path_conditions }.should eql([JCR::Query::WhereCondition.new("jcr:path", "/content/%", "LIKE")])
-      # puts query.instance_eval { where_sql }
       query.sql.should eql("SELECT * FROM [nt:base] WHERE [jcr:path] LIKE '/content/%'")
+    end
+    
+    it "should compile a query string to search a node within multiple nodes" do
+      
     end
   end
   
@@ -88,13 +90,13 @@ describe JCR::Query do
     it "should append to where_conditions" do
       query.where("foo" => "bar")
       query.where("baz" => "quux")
-      query.where_conditions.should eql([JCR::Query::WhereCondition.new("foo", "bar"), JCR::Query::WhereCondition.new("baz", "quux")])
+      query.where_conditions.should eql([SafetyPin::Query::WhereCondition.new("foo", "bar"), SafetyPin::Query::WhereCondition.new("baz", "quux")])
     end
   end
   
   describe "#type" do
     it "should set the node type" do
-      query = JCR::Query.new
+      query = SafetyPin::Query.new
       query.type("cq:Page")
       query.instance_eval { @type }.should eql("cq:Page")
     end
@@ -109,16 +111,16 @@ describe JCR::Query do
   # 
   # it "should query for nodes beneath a specific path" do
   #   pending
-  #   nodes = JCR::Query.path("/content/sfu")
+  #   nodes = SafetyPin::Query.path("/content/sfu")
   # end
   # 
   # it "should query for nodes with a specific property" do
   #   pending
-  #   nodes = JCR::Query.where("cq:Template" => "/apps/sfu/templates/basicpage")
+  #   nodes = SafetyPin::Query.where("cq:Template" => "/apps/sfu/templates/basicpage")
   # end
   # 
   # it "should chain together query methods to build a query" do
   #   pending
-  #   nodes = JCR::Query.path("/content").type("nt:unstructured").where("jcr:title" => "Open House")
+  #   nodes = SafetyPin::Query.path("/content").type("nt:unstructured").where("jcr:title" => "Open House")
   # end
 end

@@ -1,4 +1,4 @@
-class JCR
+module SafetyPin
   class Query
     class WhereCondition
       attr_reader :name, :value, :comparator
