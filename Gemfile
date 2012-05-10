@@ -1,3 +1,3 @@
 source "http://rubygems.org"
 
-gem "ripl"
+gem "rspec", "~> 2.10.0"
