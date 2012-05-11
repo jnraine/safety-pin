@@ -406,6 +406,12 @@ describe SafetyPin::Node do
           lambda { SafetyPin::Node.build("/content") }.should raise_error(SafetyPin::NodeError)
         end
       end
+      
+      it "should coerce path to a string" do
+        node = SafetyPin::Node.build(Pathname("/content/foo"))
+        node.should be_new
+        node.properties.should eql({})
+      end
     end
     
     context "given an absolute path with a non-existent parent node" do
@@ -505,6 +511,23 @@ describe SafetyPin::Node do
     
     it "should return the primary type of the node" do
       @node.primary_type.should eql("nt:unstructured")
+    end
+  end
+  
+  describe "#create" do
+    before { @node = SafetyPin::Node.create("/content/foo") }
+    after { @node.destroy }
+    
+    it "should create a child node with a given name" do
+      @node.create("bar")
+      SafetyPin::Node.find("/content/foo/bar").should be_a(SafetyPin::Node)
+    end
+    
+    it "should create a child node with a given name and node type" do
+      @node.create("bar", "nt:folder")
+      child_node = SafetyPin::Node.find("/content/foo/bar")
+      child_node.should be_a(SafetyPin::Node)
+      child_node.primary_type.should eql("nt:folder")
     end
   end
 end

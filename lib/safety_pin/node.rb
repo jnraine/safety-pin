@@ -18,6 +18,7 @@ module SafetyPin
     end
     
     def self.build(path, node_type = nil)
+      path = path.to_s
       node_type ||= "nt:unstructured"
       rel_path = nil
       if path.start_with?("/")
@@ -235,6 +236,12 @@ module SafetyPin
     
     def primary_type
       self["jcr:primaryType"]
+    end
+    
+    # Create and return a child node with a given name
+    def create(name, type = nil)
+      path = Pathname(self.path) + name
+      Node.create(path, type)
     end
   end
   
