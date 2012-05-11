@@ -165,6 +165,13 @@ describe SafetyPin::Node do
           @node.read_attribute("foo").should eql(["one", "two"])
         end
       end
+      
+      context "given a non-string name" do
+        it "should co-erce the name into a string and retrieve the property" do
+          @node["foo"] = "bar"
+          @node.read_attribute(:foo).should eql("bar")
+        end
+      end
     end
     
     it "should return the string value of a name property" do
@@ -195,6 +202,15 @@ describe SafetyPin::Node do
           @node.save
           @node.reload
           @node["foo"].to_s.should eql(time.to_s)
+        end
+      end
+      
+      context "given a non-string name" do
+        it "should co-erce name into string before setting property" do          
+          @node.write_attribute(:foo, "bar")
+          @node.save
+          @node.reload
+          @node["foo"].should eql("bar")
         end
       end
     end

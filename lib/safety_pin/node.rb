@@ -73,6 +73,7 @@ module SafetyPin
     end
     
     def read_attribute(name)
+      name = name.to_s
       property = j_node.get_property(name)
       if property_is_multi_valued?(property)
         retrieve_property_multi_value(property)
@@ -120,6 +121,8 @@ module SafetyPin
     
     def write_attribute(name, value)
       raise PropertyError.new("Illegal operation: cannot change jcr:primaryType property") if name == "jcr:primaryType"
+
+      name = name.to_s
       
       if value.is_a? Array
         values = value
