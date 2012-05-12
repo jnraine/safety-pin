@@ -232,6 +232,12 @@ describe SafetyPin::Node do
         @node.write_attribute("foo", nil)
         lambda { @node["foo"] }.should raise_error(SafetyPin::NilPropertyError)
       end
+      
+      context "given a non-existent property and a null value" do
+        it "should return nil" do
+          @node.write_attribute("foo", nil).should be_nil
+        end
+      end
     end
 
     context "changing jcr:primaryType property" do
