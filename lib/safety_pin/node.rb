@@ -122,12 +122,11 @@ module SafetyPin
     
     def write_attribute(name, value)
       raise PropertyError.new("Illegal operation: cannot change jcr:primaryType property") if name == "jcr:primaryType"
+      name = name.to_s
       
       if value.nil? and not j_node.has_property(name)
         return nil
       end
-
-      name = name.to_s
       
       if value.is_a? Array
         values = value
