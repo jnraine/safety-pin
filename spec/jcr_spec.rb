@@ -1,7 +1,15 @@
 require 'spec_helper.rb'
 
 describe SafetyPin::JCR do
-  it "should login to a remote SafetyPin::JCR" do
+  before(:all) do
+    SafetyPin::JCR.logout
+  end
+  
+  after(:all) do
+    SafetyPin::JCR.dev_login
+  end
+  
+  it "should login to a remote JCR" do
     SafetyPin::JCR.login(:hostname => "http://localhost:4502", :username => "admin", :password => "admin")
     SafetyPin::JCR.session.should be_a(Java::JavaxJcr::Session)
     SafetyPin::JCR.should be_logged_in

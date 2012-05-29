@@ -1,18 +1,6 @@
 require 'spec_helper.rb'
 
-describe SafetyPin::Node do
-  before(:all) do
-    SafetyPin::JCR.login(:hostname => "http://localhost:4502", :username => "admin", :password => "admin")
-  end
-  
-  before do
-    SafetyPin::JCR.session.refresh(false)
-  end
-  
-  after(:all) do
-    SafetyPin::JCR.logout
-  end
-  
+describe SafetyPin::Node do  
   describe ".find" do
     context "given a node name" do
       context "that exists" do
@@ -38,7 +26,6 @@ describe SafetyPin::Node do
       it "should return the node at that path" do
         SafetyPin::Node.create("/content/foo")
         SafetyPin::Node.find_or_create("/content/foo").path.should eql "/content/foo"
-        SafetyPin::Node.find("/content/foo").destroy
       end
     end
     
@@ -46,7 +33,6 @@ describe SafetyPin::Node do
       it "should create a node at the path and return it" do
         SafetyPin::Node.find("/content/foo").should be_nil
         SafetyPin::Node.find_or_create("/content/foo").path.should eql "/content/foo"
-        SafetyPin::Node.find("/content/foo").destroy
       end
     end
   end
@@ -87,7 +73,6 @@ describe SafetyPin::Node do
         it "should return a grandchild node given a relative path" do
           SafetyPin::Node.create("/content/foo")
           node.child("content/foo").name.should eql("foo")
-          SafetyPin::Node.find("/content/foo").destroy
         end
       end
       
@@ -128,8 +113,6 @@ describe SafetyPin::Node do
         @node = SafetyPin::Node.create("/content/foo")
         @node["bar"] = "baz"
       end
-      
-      after { @node.destroy }
     
       it "should save the changes to the JCR" do
         @node.save
@@ -147,7 +130,6 @@ describe SafetyPin::Node do
       it "should save the node" do
         node = SafetyPin::Node.build("/content/foo")
         node.save.should be_true
-        node.destroy
       end
       
       it "should save changes in parent node" do
@@ -157,54 +139,51 @@ describe SafetyPin::Node do
         parent_node.should be_changed
         node.save
         parent_node.should_not be_changed
-        node.destroy
-        parent_node.destroy
       end
     end
   end
   
   describe "#read_attribute" do
     context "on an existing node" do
-      before { @node = SafetyPin::Node.create("/content/foo") }
-      after { @node.destroy }
+      let(:node) { SafetyPin::Node.create("/content/foo") }
     
       it "should return the string value of a string property" do
-        @node["foo"] = "bar"
-        @node.read_attribute("foo").should eql("bar")
+        node["foo"] = "bar"
+        node.read_attribute("foo").should eql("bar")
       end
     
       it "should return the boolean value of a boolean property" do
-        @node["foo"] = true
-        @node.read_attribute("foo").should eql(true)
+        node["foo"] = true
+        node.read_attribute("foo").should eql(true)
       end
     
       it "should return the double value of a double (or Ruby float) property" do
-        @node["foo"] = 3.14
-        @node.read_attribute("foo").should eql(3.14)
+        node["foo"] = 3.14
+        node.read_attribute("foo").should eql(3.14)
       end
     
       it "should return the long value of a long (or Ruby Fixnum) property" do
-        @node["foo"] = 42
-        @node.read_attribute("foo").should eql(42)
+        node["foo"] = 42
+        node.read_attribute("foo").should eql(42)
       end
     
       it "should return the time value of a date property" do
         time = Time.now
-        @node["foo"] = time
-        @node.read_attribute("foo").to_s.should eql(time.to_s)
+        node["foo"] = time
+        node.read_attribute("foo").to_s.should eql(time.to_s)
       end
       
       context "given a multi-value property" do
         it "should return an array of values" do
-          @node["foo"] = ["one", "two"]
-          @node.read_attribute("foo").should eql(["one", "two"])
+          node["foo"] = ["one", "two"]
+          node.read_attribute("foo").should eql(["one", "two"])
         end
       end
       
       context "given a non-string name" do
         it "should co-erce the name into a string and retrieve the property" do
-          @node["foo"] = "bar"
-          @node.read_attribute(:foo).should eql("bar")
+          node["foo"] = "bar"
+          node.read_attribute(:foo).should eql("bar")
         end
       end
     end
@@ -219,33 +198,32 @@ describe SafetyPin::Node do
   end
   
   context "#write_attribute" do
-    before { @node = SafetyPin::Node.create("/content/foo") }
-    after { @node.destroy }
+    let(:node) { SafetyPin::Node.create("/content/foo") }
      
     context "given a single value" do
       it "should set a string property value" do
-        @node.write_attribute("foo", "bar")
-        @node.save
-        @node.reload
-        @node["foo"].should eql("bar")
+        node.write_attribute("foo", "bar")
+        node.save
+        node.reload
+        node["foo"].should eql("bar")
       end
     
       context "given a Time object" do
         it "should set a date property value" do
           time = Time.now
-          @node.write_attribute("foo", time)
-          @node.save
-          @node.reload
-          @node["foo"].to_s.should eql(time.to_s)
+          node.write_attribute("foo", time)
+          node.save
+          node.reload
+          node["foo"].to_s.should eql(time.to_s)
         end
       end
       
       context "given a non-string name" do
         it "should co-erce name into string before setting property" do          
-          @node.write_attribute(:foo, "bar")
-          @node.save
-          @node.reload
-          @node["foo"].should eql("bar")
+          node.write_attribute(:foo, "bar")
+          node.save
+          node.reload
+          node["foo"].should eql("bar")
         end
       end
     end
@@ -253,51 +231,50 @@ describe SafetyPin::Node do
     context "given an array of values" do
       context "of the same type" do
         it "should set a multi-value string array" do
-          @node.write_attribute("foo", ["one", "two"])
-          @node.save
-          @node.reload
-          @node["foo"].should eql(["one", "two"])
+          node.write_attribute("foo", ["one", "two"])
+          node.save
+          node.reload
+          node["foo"].should eql(["one", "two"])
         end
       end
     end
     
     context "given a null value" do
       it "should remove the property" do
-        @node["foo"] = "bar"
-        @node.write_attribute("foo", nil)
-        lambda { @node["foo"] }.should raise_error(SafetyPin::NilPropertyError)
+        node["foo"] = "bar"
+        node.write_attribute("foo", nil)
+        lambda { node["foo"] }.should raise_error(SafetyPin::NilPropertyError)
       end
       
       context "given a non-existent property and a null value" do
         it "should return nil" do
-          @node.write_attribute("foo", nil).should be_nil
+          node.write_attribute("foo", nil).should be_nil
         end
       end
     end
 
     context "changing jcr:primaryType property" do
       it "should raise an error" do
-       lambda { @node.write_attribute("jcr:primaryType", "nt:folder") }.should raise_error(SafetyPin::PropertyError)
+       lambda { node.write_attribute("jcr:primaryType", "nt:folder") }.should raise_error(SafetyPin::PropertyError)
       end
     end
   end
   
   context "#reload" do
-    before { @node = SafetyPin::Node.create("/content/foo") }
-    after { @node.destroy }
+    let(:node) { SafetyPin::Node.create("/content/foo") }
     
     it "should discard pending changes" do
-      @node["foo"] = "bar"
-      @node.reload
-      lambda { @node.read_attribute("foo") }.should raise_error(SafetyPin::NilPropertyError)
+      node["foo"] = "bar"
+      node.reload
+      lambda { node.read_attribute("foo") }.should raise_error(SafetyPin::NilPropertyError)
     end
     
     it "should not discard changes for another node" do
-      @node["bar"] = "baz"
+      node["bar"] = "baz"
       another_node = SafetyPin::Node.find("/content")
       another_node["bar"] = "baz"
-      @node.reload
-      lambda { @node["bar"] }.should raise_error(SafetyPin::NilPropertyError)
+      node.reload
+      lambda { node["bar"] }.should raise_error(SafetyPin::NilPropertyError)
       another_node["bar"].should eql("baz")
     end
   end
@@ -308,7 +285,6 @@ describe SafetyPin::Node do
       node.write_attribute("bar","baz")
       node.save
       node["bar"].should eql("baz")
-      node.destroy
     end
   end
   
@@ -352,18 +328,17 @@ describe SafetyPin::Node do
   end
   
   describe "#properties=" do
-    before { @node = SafetyPin::Node.create("/content/foo") }
-    after  { @node.destroy }
+    let(:node) { SafetyPin::Node.create("/content/foo") }
     
     it "should set the properties of a node" do
-      @node.properties = {"foo" => "bar"}
-      @node.properties.should eql({"foo" => "bar"})
+      node.properties = {"foo" => "bar"}
+      node.properties.should eql({"foo" => "bar"})
     end
     
     it "should set unset properties not specified in hash" do
-      @node["foo"] = "bar"
-      @node.properties = {"baz" => "qux"}
-      @node.properties.should eql({"baz" => "qux"})
+      node["foo"] = "bar"
+      node.properties = {"baz" => "qux"}
+      node.properties.should eql({"baz" => "qux"})
     end
   end
   
@@ -374,55 +349,48 @@ describe SafetyPin::Node do
   end
   
   describe "#mixin_types" do
-    before do
-      @node = SafetyPin::Node.create("/content/foo")
-      @node.j_node.add_mixin("mix:created")
-      @node.save
-    end
-    
-    after  { @node.destroy }
-  
     it "should return the mixin types of a node" do
-      @node.mixin_types.should eql(["mix:created"])
+      node = SafetyPin::Node.create("/content/foo")
+      node.j_node.add_mixin("mix:created")
+      node.save
+      node.mixin_types.should eql(["mix:created"])
     end
   end
   
   describe "#add_mixin" do
-    before { @node = SafetyPin::Node.create("/content/foo") }
-    after  { @node.destroy }
+    let(:node) { SafetyPin::Node.create("/content/foo") }
   
     it "should add a mixin type to node" do
-      @node.add_mixin("mix:created")
-      @node.save
-      @node.mixin_types.should eql(["mix:created"])
+      node.add_mixin("mix:created")
+      node.save
+      node.mixin_types.should eql(["mix:created"])
     end
     
     it "should require a save before the mixin addition is detected" do
-      @node.add_mixin("mix:created")
-      @node.mixin_types.should eql([])
+      node.add_mixin("mix:created")
+      node.mixin_types.should eql([])
     end
   end
   
   describe "#remove_mixin" do
-    before do 
-      @node = SafetyPin::Node.create("/content/foo") 
-      @node.add_mixin("mix:created")
-      @node.save
+    let(:node) do 
+      node = SafetyPin::Node.create("/content/foo") 
+      node.add_mixin("mix:created")
+      node.save
+      node
     end
     
-    after  { @node.destroy }
-    
     it "should remove a mixin type from a node" do
-      @node.mixin_types.should eql(["mix:created"])
-      @node.remove_mixin("mix:created")
-      @node.save
-      @node.mixin_types.should eql([])
+      node.mixin_types.should eql(["mix:created"])
+      node.remove_mixin("mix:created")
+      node.save
+      node.mixin_types.should eql([])
     end
     
     it "should require a save before the mixin removal is detected" do
-      @node.remove_mixin("mix:created")
-      @node.mixin_types.should eql(["mix:created"])
-      @node.reload
+      node.remove_mixin("mix:created")
+      node.mixin_types.should eql(["mix:created"])
+      node.reload
     end
   end
 
@@ -481,7 +449,6 @@ describe SafetyPin::Node do
       it "should build and save a node of the specified type" do
         node = SafetyPin::Node.create("/content/foo", "nt:folder")
         SafetyPin::Node.find("/content/foo").should_not be_nil
-        node.destroy
       end
     end
   end
@@ -499,7 +466,6 @@ describe SafetyPin::Node do
       node.save
       property = node.j_node.get_property("bar")
       node.property_is_multi_valued?(property).should be_true
-      node.destroy
     end
     
     it "should return false if property is not multi-valued" do
@@ -508,7 +474,6 @@ describe SafetyPin::Node do
       node.save
       property = node.j_node.get_property("bar")
       node.property_is_multi_valued?(property).should be_false
-      node.destroy
     end
   end
   
@@ -527,45 +492,37 @@ describe SafetyPin::Node do
       parent_node.should be_changed
       node.destroy
       parent_node.should_not be_changed
-      parent_node.destroy
     end
     
-    context "when it fails" do
-      before do
-        @node = SafetyPin::Node.create("/content/foo")
-        @node.add_mixin("mix:created")
-        @node.save
-      end
-      
-      after { @node.reload; @node.destroy }
-      
+    context "when it fails" do      
       it "should raise an error" do
-        @node.remove_mixin("mix:created") # make node unremoveable
-        lambda { @node.destroy }.should raise_error(SafetyPin::NodeError)
+        node = SafetyPin::Node.create("/content/foo")
+        node.add_mixin("mix:created")
+        node.save
+        node.remove_mixin("mix:created") # make node unremoveable
+        lambda { node.destroy }.should raise_error(SafetyPin::NodeError)
       end
     end
   end
   
   describe "#primary_type" do
-    before { @node = SafetyPin::Node.create("/content/foo") }
-    after { @node.destroy }
+    let(:node) { SafetyPin::Node.create("/content/foo") }
     
     it "should return the primary type of the node" do
-      @node.primary_type.should eql("nt:unstructured")
+      node.primary_type.should eql("nt:unstructured")
     end
   end
   
   describe "#create" do
-    before { @node = SafetyPin::Node.create("/content/foo") }
-    after { @node.destroy }
+    let(:node) { SafetyPin::Node.create("/content/foo") }
     
     it "should create a child node with a given name" do
-      @node.create("bar")
+      node.create("bar")
       SafetyPin::Node.find("/content/foo/bar").should be_a(SafetyPin::Node)
     end
     
     it "should create a child node with a given name and node type" do
-      @node.create("bar", "nt:folder")
+      node.create("bar", "nt:folder")
       child_node = SafetyPin::Node.find("/content/foo/bar")
       child_node.should be_a(SafetyPin::Node)
       child_node.primary_type.should eql("nt:folder")

@@ -1,18 +1,6 @@
 require 'spec_helper.rb'
 
-describe SafetyPin::Query do
-  before(:all) do
-    SafetyPin::JCR.login(:hostname => "http://localhost:4502", :username => "admin", :password => "admin")
-  end
-  
-  before do
-    SafetyPin::JCR.session.refresh(false)
-  end
-
-  after(:all) do
-    SafetyPin::JCR.logout
-  end
-  
+describe SafetyPin::Query do  
   let(:query) { SafetyPin::Query.new }
 
   describe ".execute" do

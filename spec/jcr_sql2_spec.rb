@@ -1,18 +1,6 @@
 require 'spec_helper.rb'
 
-describe "JCR-SQL2 example queries" do
-  before(:all) do
-    SafetyPin::JCR.login(:hostname => "http://localhost:4502", :username => "admin", :password => "admin")
-  end
-  
-  before do
-    SafetyPin::JCR.session.refresh(false)
-  end
-  
-  after(:all) do
-    SafetyPin::JCR.logout
-  end
-  
+describe "JCR-SQL2 example queries" do  
   before do
     @node = SafetyPin::Node.create("/content/foo")
     @node.properties = {"bar" => "baz", "qux" => "qax"}
