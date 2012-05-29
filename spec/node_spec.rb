@@ -13,7 +13,7 @@ describe SafetyPin::Node do
     SafetyPin::JCR.logout
   end
   
-  context ".find" do
+  describe ".find" do
     context "given a node name" do
       context "that exists" do
         it "should return a node with a matching path" do
@@ -33,13 +33,31 @@ describe SafetyPin::Node do
     end
   end
   
-  context ".session" do
+  describe ".find_or_create" do    
+    context "given a node path that exists" do
+      it "should return the node at that path" do
+        SafetyPin::Node.create("/content/foo")
+        SafetyPin::Node.find_or_create("/content/foo").path.should eql "/content/foo"
+        SafetyPin::Node.find("/content/foo").destroy
+      end
+    end
+    
+    context "give a node path that doesn't exist" do
+      it "should create a node at the path and return it" do
+        SafetyPin::Node.find("/content/foo").should be_nil
+        SafetyPin::Node.find_or_create("/content/foo").path.should eql "/content/foo"
+        SafetyPin::Node.find("/content/foo").destroy
+      end
+    end
+  end
+  
+  describe ".session" do
     it "should return a session" do
       SafetyPin::Node.session.should be_a(Java::JavaxJcr::Session)
     end
   end
   
-  context "#session" do
+  describe "#session" do
     it "should return a session" do
       SafetyPin::Node.find("/content").session.should be_a(Java::JavaxJcr::Session)
     end
@@ -51,13 +69,13 @@ describe SafetyPin::Node do
     end
   end
   
-  context "#children" do
+  describe "#children" do
     it "should return an array of child nodes" do
       SafetyPin::Node.find("/content").children.first.should be_a(SafetyPin::Node)
     end
   end
   
-  context "#child" do
+  describe "#child" do
     context "given a node name" do
       let(:node) { SafetyPin::Node.find("/") }
       
@@ -81,7 +99,7 @@ describe SafetyPin::Node do
     end
   end
   
-  context "#name" do
+  describe "#name" do
     it "should return a string name" do
       SafetyPin::Node.find("/content").name.should eql("content")
     end

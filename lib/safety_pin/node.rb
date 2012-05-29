@@ -13,6 +13,10 @@ module SafetyPin
       nil
     end
     
+    def self.find_or_create(path)
+      find(path) || create(path)
+    end
+    
     def self.session
       JCR.session
     end
