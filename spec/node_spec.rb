@@ -99,6 +99,23 @@ describe SafetyPin::Node do
     end
   end
   
+  describe "#find_or_create_child" do
+    let(:parent) { SafetyPin::Node.create("/content/foo") }
+    
+    context "an existing node path" do
+      it "should return the child node" do
+        parent.create("bar")
+        parent.find_or_create("bar").path.should eql "/content/foo/bar"
+      end
+    end
+    
+    context "a non-existing node path" do
+      it "should create a node and return it" do
+        parent.find_or_create("bar").path.should eql "/content/foo/bar"
+      end
+    end
+  end
+  
   describe "#name" do
     it "should return a string name" do
       SafetyPin::Node.find("/content").name.should eql("content")

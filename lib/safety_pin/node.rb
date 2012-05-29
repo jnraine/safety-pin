@@ -245,6 +245,10 @@ module SafetyPin
       self["jcr:primaryType"]
     end
     
+    def find_or_create(name, type = nil)
+      child(name) || create(name, type)
+    end
+    
     # Create and return a child node with a given name
     def create(name, type = nil)
       path = Pathname(self.path) + name
