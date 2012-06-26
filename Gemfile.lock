@@ -2,6 +2,7 @@ GEM
   remote: http://rubygems.org/
   specs:
     diff-lcs (1.1.3)
+    nyan-cat-formatter (0.0.7)
     rspec (2.10.0)
       rspec-core (~> 2.10.0)
       rspec-expectations (~> 2.10.0)
@@ -12,7 +13,9 @@ GEM
     rspec-mocks (2.10.1)
 
 PLATFORMS
+  java
   ruby
 
 DEPENDENCIES
+  nyan-cat-formatter
   rspec (~> 2.10.0)
