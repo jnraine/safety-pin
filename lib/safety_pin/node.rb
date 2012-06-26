@@ -1,3 +1,5 @@
+require 'pathname'
+
 module SafetyPin
   class Node
     include_class 'javax.jcr.PropertyType'
@@ -21,9 +23,10 @@ module SafetyPin
       JCR.session
     end
     
-    def self.build(path, node_type = nil)
+    def self.build(path, node_type = nil, properties = nil)
       path = path.to_s
       node_type ||= "nt:unstructured"
+      properties ||= {}
       rel_path = nil
       if path.start_with?("/")
         rel_path = path.sub("/","")
@@ -34,14 +37,17 @@ module SafetyPin
       if session.root_node.has_node(rel_path)
         raise NodeError.new("Node already exists at path: #{path}")
       else
-        self.new(session.root_node.add_node(rel_path, node_type))
+        node = self.new(session.root_node.add_node(rel_path, node_type))
+        node.properties = properties
+
+        node
       end
     rescue javax.jcr.PathNotFoundException => e
       raise NodeError.new("Cannot add a new node to a non-existing parent at #{path}")
     end
     
-    def self.create(path, node_type = nil)
-      node = self.build(path, node_type)
+    def self.create(path, node_type = nil, properties = nil)
+      node = self.build(path, node_type, properties)
       node.save
       node
     end
@@ -67,7 +73,7 @@ module SafetyPin
     end
     
     def child(relative_path)
-      child_j_node = j_node.get_node(relative_path)
+      child_j_node = j_node.get_node(relative_path.to_s)
       Node.new(child_j_node)
     rescue javax.jcr.PathNotFoundException
       nil
@@ -206,12 +212,13 @@ module SafetyPin
     end
     
     def properties=(new_props)
-      # props.each do |name, value|
-      #   self[name] = value
-      # end
       property_names = (properties.keys + new_props.keys).uniq
       property_names.each do |name|
-        self[name] = new_props[name]
+        if new_props[name].is_a?(Hash)
+          build(name, nil, new_props[name])
+        else
+          self[name] = new_props[name]
+        end
       end
     end
     
@@ -250,9 +257,14 @@ module SafetyPin
     end
     
     # Create and return a child node with a given name
-    def create(name, type = nil)
-      path = Pathname(self.path) + name
-      Node.create(path, type)
+    def create(name, type = nil, properties = nil)
+      path = Pathname(self.path) + name.to_s
+      Node.create(path, type, properties)
+    end
+
+    def build(name, type = nil, properties = nil)
+      path = Pathname(self.path) + name.to_s
+      Node.build(path, type, properties)
     end
   end
   

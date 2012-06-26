@@ -75,6 +75,10 @@ describe SafetyPin::Node do
           node.child("content/foo").name.should eql("foo")
         end
       end
+
+      it "should coerce non-string name to string and return child" do
+        node.child(:content).name.should == "content"
+      end
       
       context "that doesn't exist" do
         it "should return nil" do
@@ -332,13 +336,18 @@ describe SafetyPin::Node do
     
     it "should set the properties of a node" do
       node.properties = {"foo" => "bar"}
-      node.properties.should eql({"foo" => "bar"})
+      node.properties.should == {"foo" => "bar"}
     end
     
     it "should set unset properties not specified in hash" do
       node["foo"] = "bar"
       node.properties = {"baz" => "qux"}
       node.properties.should eql({"baz" => "qux"})
+    end
+
+    it "should create child nodes for hash values" do
+      node.properties = {foo: {bar: "baz"}}
+      node.child(:foo).properties.should == {"bar" => "baz"}
     end
   end
   
@@ -400,6 +409,15 @@ describe SafetyPin::Node do
         node = SafetyPin::Node.build("/content/foo")
         node.should be_new
         node.properties.should eql({})
+      end
+
+
+
+      context "given properties" do
+        it "should build a node with properties" do
+          node = SafetyPin::Node.build("/content/foo", nil, {foo: "bar"})
+          node.properties.should == {"foo" => "bar"}
+        end
       end
       
       context "and a node type string" do
@@ -513,19 +531,43 @@ describe SafetyPin::Node do
     end
   end
   
+  describe "#build" do
+    let(:node) { SafetyPin::Node.create("/content/foo") }
+    
+    it "should create a child node with a given name" do
+      node.build("bar").path.should == "/content/foo/bar"
+    end
+    
+    it "should create a child node with a given name and node type" do
+      child_node = node.build("bar", "nt:folder")
+      child_node.should be_a(SafetyPin::Node)
+      child_node.primary_type.should eql("nt:folder")
+    end
+
+    it "should create a child node with a name, node type, and properties" do
+      node.build("bar", nil, {foo: "bar"}).properties.should == {"foo" => "bar"}
+    end
+  end
+
   describe "#create" do
     let(:node) { SafetyPin::Node.create("/content/foo") }
     
     it "should create a child node with a given name" do
-      node.create("bar")
-      SafetyPin::Node.find("/content/foo/bar").should be_a(SafetyPin::Node)
+      child_node = node.create("bar")
+      child_node.path.should == "/content/foo/bar"
+      child_node.should_not
     end
     
     it "should create a child node with a given name and node type" do
-      node.create("bar", "nt:folder")
-      child_node = SafetyPin::Node.find("/content/foo/bar")
-      child_node.should be_a(SafetyPin::Node)
+      child_node = node.create("bar", "nt:folder")
+      child_node.should_not be_new
       child_node.primary_type.should eql("nt:folder")
+    end
+
+    it "should create a child node with a name, node type, and properties" do
+      child_node = node.create("bar", nil, {foo: "bar"})
+      child_node.should_not be_new
+      child_node.properties.should == {"foo" => "bar"}
     end
   end
 end
