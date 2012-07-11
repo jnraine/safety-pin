@@ -36,6 +36,17 @@ describe SafetyPin::Node do
       end
     end
   end
+
+  describe ".exists?" do
+    it "returns true if node exists at path" do
+      SafetyPin::Node.create("/content/foo")
+      SafetyPin::Node.exists?("/content/foo").should be_true
+    end
+
+    it "returns false if node does not exist" do
+      SafetyPin::Node.exists?("/content/foo").should be_false
+    end
+  end
   
   describe ".session" do
     it "should return a session" do

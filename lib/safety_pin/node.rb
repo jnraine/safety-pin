@@ -18,6 +18,10 @@ module SafetyPin
     def self.find_or_create(path)
       find(path) || create(path)
     end
+
+    def self.exists?(path)
+      find(path) != nil
+    end
     
     def self.session
       JCR.session
