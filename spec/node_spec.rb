@@ -481,6 +481,13 @@ describe SafetyPin::Node do
       end
     end
   end
+
+  describe ".create_parents" do
+    it "creates parent nodes if they do not exist" do
+      SafetyPin::Node.create_parents("/content/foo/bar/baz")
+      SafetyPin::Node.create("/content/foo/bar/baz").should_not be_nil
+    end
+  end
   
   context "#value_factory" do
     it "should return a value factory instance" do

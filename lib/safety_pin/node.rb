@@ -56,6 +56,24 @@ module SafetyPin
       node
     end
 
+    def self.create_parents(path)
+      intermediate_paths = []
+
+      current_intermediate_path = Pathname(path)
+      while(current_intermediate_path.to_s != "/")
+        current_intermediate_path = current_intermediate_path.parent
+        intermediate_paths.push(current_intermediate_path)
+      end
+      
+      results = intermediate_paths.reverse.map do |intermediate_path|
+        create(intermediate_path) unless exists?(intermediate_path)
+      end
+
+      session.save
+
+      results
+    end
+
     def initialize(j_node)
       @j_node = j_node
     end
