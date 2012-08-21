@@ -172,8 +172,14 @@ module SafetyPin
         calendar_value = Calendar.instance
         calendar_value.set_time(value.to_java)
         j_node.set_property(name, calendar_value)
+      elsif value.is_a? Symbol
+        j_node.set_property(name, value.to_s)
       else
-        j_node.set_property(name, value)
+        begin
+          j_node.set_property(name, value)
+        rescue NameError
+          raise SafetyPin::PropertyTypeError.new("Property value type of #{value.class} is unsupported")
+        end
       end
     end
     

@@ -223,13 +223,39 @@ describe SafetyPin::Node do
         node["foo"].should eql("bar")
       end
     
-      context "given a Time object" do
+      context "given a Time object value" do
         it "should set a date property value" do
           time = Time.now
           node.write_attribute("foo", time)
           node.save
           node.reload
           node["foo"].to_s.should eql(time.to_s)
+        end
+      end
+
+      context "given a symbol value" do
+        it "coerces value to string" do
+          node.write_attribute("foo", :bar)
+          node["foo"].should == "bar"
+        end
+      end
+
+      context "given another supported value" do
+        it "sets the property" do
+          node.write_attribute("foo", 1)
+          node["foo"].should == 1
+          node.write_attribute("foo", 1.1)
+          node["foo"].should == 1.1
+          node.write_attribute("foo", true)
+          node["foo"].should == true
+          node.write_attribute("foo", "bar")
+          node["foo"].should == "bar"
+        end
+      end
+
+      context "given an unsupported value" do
+        it "raises an error" do
+          lambda { node.write_attribute("foo", {unsupported: :value_type}) }.should raise_error(SafetyPin::PropertyTypeError)
         end
       end
       
