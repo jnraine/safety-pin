@@ -8,6 +8,10 @@ module SafetyPin
       @primary_type = opts[:primary_type] || "nt:unstructured"
       @properties = opts[:properties] || {}
     end
+
+    def node_blueprint?
+      true
+    end
   end
 
   class NodeBlueprintError < Exception; end

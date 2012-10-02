@@ -15,8 +15,9 @@ module SafetyPin
       nil
     end
     
-    def self.find_or_create(path)
-      find(path) || create(path)
+    def self.find_or_create(path, primary_type = nil)
+      node_blueprint = NodeBlueprint.new(:path => path.to_s, :primary_type => primary_type)
+      find(path) || create(node_blueprint)
     end
 
     def self.exists?(path)
@@ -27,27 +28,18 @@ module SafetyPin
       JCR.session
     end
     
-    def self.build(path, node_type = nil, properties = nil)
-      path = path.to_s
-      node_type ||= "nt:unstructured"
-      properties ||= {}
-      rel_path = nil
-      if path.start_with?("/")
-        rel_path = path.sub("/","")
-      else
-        raise ArgumentError.new("Given path not absolute: #{path}")
-      end
+    def self.build(node_blueprint)
+      raise NodeError.new("NodeBlueprint is nil") if node_blueprint.nil?
+      raise NodeError.new("NodeBlueprint has non-absolute path") unless node_blueprint.path.start_with?("/")
+      raise NodeError.new("Node already exists at path: #{node_blueprint.path}") if Node.exists?(node_blueprint.path)
       
-      if session.root_node.has_node(rel_path)
-        raise NodeError.new("Node already exists at path: #{path}")
-      else
-        node = self.new(session.root_node.add_node(rel_path, node_type))
-        node.properties = properties
+      rel_path_to_root_node = node_blueprint.path[1..-1]
+      node = self.new(session.root_node.add_node(rel_path_to_root_node, node_blueprint.primary_type))
+      node.properties = node_blueprint.properties
 
-        node
-      end
+      node
     rescue javax.jcr.PathNotFoundException => e
-      raise NodeError.new("Cannot add a new node to a non-existing parent at #{path}")
+      raise NodeError.new("Cannot add a new node to a non-existing parent at #{node_blueprint.path}")
     end
 
     def self.update(node_blueprint)
@@ -59,8 +51,8 @@ module SafetyPin
       node
     end
     
-    def self.create(path, node_type = nil, properties = nil)
-      node = self.build(path, node_type, properties)
+    def self.create(node_blueprint)
+      node = self.build(node_blueprint)
       node.save
       node
     end
@@ -75,7 +67,7 @@ module SafetyPin
       end
       
       results = intermediate_paths.reverse.map do |intermediate_path|
-        create(intermediate_path) unless exists?(intermediate_path)
+        create(NodeBlueprint.new(:path => intermediate_path.to_s)) unless exists?(intermediate_path)
       end
 
       session.save
@@ -251,17 +243,40 @@ module SafetyPin
     def properties=(new_props)
       property_names = (properties.keys + new_props.keys).uniq
       property_names.each do |name|
-        if new_props[name].is_a?(NodeBlueprint)
-          node_blueprint = new_props[name]
-          if Node.exists?(Pathname(path) + name)
-            Node.update(name, node_blueprint.primary_type, node_blueprint.properties)
+        # REFACTOR ME PLZ
+        child_path = Pathname(path.to_s) + name.to_s
+        if new_props[name].is_a? Hash
+          new_props[name] = convert_hash_to_node_blueprint(new_props[name])
+        end
+
+        if new_props[name].respond_to?(:node_blueprint?) and new_props[name].node_blueprint?
+          # Handle node blue prints
+          node_blueprint = NodeBlueprint.new(:properties => new_props[name].properties, 
+                                             :path => child_path.to_s, 
+                                             :primary_type => new_props[name].primary_type)
+          if Node.exists?(child_path)
+            Node.update(node_blueprint)
           else
-            build(name, node_blueprint.primary_type, node_blueprint.properties)
+            Node.build(node_blueprint)
           end
         else
+          # handle everything else
           self[name] = new_props[name]
         end
       end
+    end
+
+    # Convert a hash (and it's values recursively) to NodeBlueprints. This is a
+    # helper method, allowing a hash to be passed in to Node#properties= when
+    # only properties need to be set. One caveat: all node types will default
+    # to nt:unstructured.
+    def convert_hash_to_node_blueprint(hash)
+      hash.keys.each do |key|
+        if hash[key].is_a? Hash
+          hash[key] = convert_hash(hash[key])
+        end
+      end
+      NodeBlueprint.new(:path => :no_path, :properties => hash)
     end
     
     def value_factory
@@ -298,19 +313,29 @@ module SafetyPin
       j_node.set_primary_type(primary_type)
     end
     
-    def find_or_create(name, type = nil)
-      child(name) || create(name, type)
+    def find_or_create(name, primary_type = nil)
+      path = Pathname(self.path) + name
+      self.class.find_or_create(path.to_s, primary_type)
     end
     
     # Create and return a child node with a given name
-    def create(name, type = nil, properties = nil)
-      path = Pathname(self.path) + name.to_s
-      Node.create(path, type, properties)
+    def create(name, node_blueprint = nil)
+      Node.create(node_blueprint_for(name, node_blueprint))
     end
 
-    def build(name, type = nil, properties = nil)
+    def build(name, node_blueprint = nil)
+      Node.build(node_blueprint_for(name, node_blueprint))
+    end
+
+    def node_blueprint_for(name, node_blueprint = nil)
       path = Pathname(self.path) + name.to_s
-      Node.build(path, type, properties)
+      
+      unless node_blueprint.nil?
+        properties = node_blueprint.properties
+        primary_type = node_blueprint.primary_type
+      end
+      
+      NodeBlueprint.new(:path => path.to_s, :properties => properties, :primary_type => primary_type)
     end
   end
   
