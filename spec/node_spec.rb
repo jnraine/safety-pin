@@ -382,9 +382,22 @@ describe SafetyPin::Node do
       node.properties.should eql({"baz" => "qux"})
     end
 
-    it "should create child nodes for hash values" do
-      node.properties = {foo: {bar: "baz"}}
+    it "creates child nodes for node blueprints" do
+      node.properties = {foo: SafetyPin::NodeBlueprint.new(:path => "/this/path/gets/thrown/away", :primary_type => "sling:OrderedFolder", :properties => {"bar" => "baz"})}
       node.child(:foo).properties.should == {"bar" => "baz"}
+      node.child(:foo).primary_type.should == "sling:OrderedFolder"
+    end
+
+    xit "updates child nodes when they already exist" do
+      # Create /content/foo/bar and /content/foo/bar/baz
+      node.create(:bar, "nt:unstructured", {"bar" => "baz"})
+      node.child(:bar).create(:baz)
+      node.child(:bar).child(:baz).path.should == "/content/foo/bar/baz"
+      # Update /content/foo/bar by updating /content/foo properties
+      node.properties = {bar: SafetyPin::NodeBlueprint.new(:path => "/this/path/gets/thrown/away", :primary_type => "sling:OrderedFolder", :properties => {"updated" => "props"})}
+      node.child(:bar).properties.should == {"updated" => "props"}
+      node.child(:bar).primary_type.should == "sling:OrderedFolder"
+      node.child(:bar).child(:baz).path.should == "/content/foo/bar/baz"
     end
   end
   
@@ -440,6 +453,45 @@ describe SafetyPin::Node do
     end
   end
 
+  describe ".update", :focus => true do
+    let(:node) do 
+      node = SafetyPin::Node.create("/content/foo")
+      node.save
+      node
+    end
+
+    it "updates a nodes properties" do
+      SafetyPin::Node.update(SafetyPin::NodeBlueprint.new(:path => node.path, :properties => {"foo" => "barbazbuzzzzz"}))
+      SafetyPin::Node.find(node.path).properties.should == {"foo" => "barbazbuzzzzz"}
+    end
+
+    it "preserves node children" do
+      node.create(:bar)
+      SafetyPin::Node.update(SafetyPin::NodeBlueprint.new(:path => node.path, :primary_type => "sling:OrderedFolder", :properties => {"foo" => "bar"}))
+      SafetyPin::Node.exists?("/content/foo/bar").should be_true
+    end
+
+    it "modifies the primary type" do
+      SafetyPin::Node.update(SafetyPin::NodeBlueprint.new(:path => node.path, :primary_type => "sling:OrderedFolder"))
+      SafetyPin::Node.find(node.path).primary_type.should == "sling:OrderedFolder"
+    end
+  end
+
+  describe "#primary_type=", :focus => true do
+    let(:node) do 
+      node = SafetyPin::Node.create("/content/foo", "nt:unstructured")
+      node.save
+      node
+    end
+
+    it "sets the primary type" do
+      node.primary_type.should == "nt:unstructured"
+      node.primary_type = "sling:OrderedFolder"
+      node.save
+      SafetyPin::Node.find(node.path).primary_type.should == "sling:OrderedFolder"
+    end
+  end
+
   describe ".build" do
     context "given an absolute path" do
       it "should build and return a property-less, unsaved nt:unstructured child node" do
@@ -447,8 +499,6 @@ describe SafetyPin::Node do
         node.should be_new
         node.properties.should eql({})
       end
-
-
 
       context "given properties" do
         it "should build a node with properties" do

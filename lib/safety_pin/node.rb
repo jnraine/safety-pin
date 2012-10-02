@@ -49,6 +49,15 @@ module SafetyPin
     rescue javax.jcr.PathNotFoundException => e
       raise NodeError.new("Cannot add a new node to a non-existing parent at #{path}")
     end
+
+    def self.update(node_blueprint)
+      node = find(node_blueprint.path)
+      # raise NodeError.new("Cannot retrieve node for update -- might not exist") if node.nil?
+      node.properties = node_blueprint.properties
+      node.primary_type = node_blueprint.primary_type
+      node.save
+      node
+    end
     
     def self.create(path, node_type = nil, properties = nil)
       node = self.build(path, node_type, properties)
@@ -242,8 +251,13 @@ module SafetyPin
     def properties=(new_props)
       property_names = (properties.keys + new_props.keys).uniq
       property_names.each do |name|
-        if new_props[name].is_a?(Hash)
-          build(name, nil, new_props[name])
+        if new_props[name].is_a?(NodeBlueprint)
+          node_blueprint = new_props[name]
+          if Node.exists?(Pathname(path) + name)
+            Node.update(name, node_blueprint.primary_type, node_blueprint.properties)
+          else
+            build(name, node_blueprint.primary_type, node_blueprint.properties)
+          end
         else
           self[name] = new_props[name]
         end
@@ -278,6 +292,10 @@ module SafetyPin
     
     def primary_type
       self["jcr:primaryType"]
+    end
+
+    def primary_type=(primary_type)
+      j_node.set_primary_type(primary_type)
     end
     
     def find_or_create(name, type = nil)
