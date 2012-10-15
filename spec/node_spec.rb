@@ -98,6 +98,32 @@ describe SafetyPin::Node do
       end
     end
   end
+
+  describe ".create_or_update", :focus => true do
+    let(:node_blueprint) { SafetyPin::NodeBlueprint.new(:path => "/content/foo") }
+
+    it "calls Node.create with arg when nothing exists at path" do
+      SafetyPin::Node.should_receive(:create).with(node_blueprint)
+      SafetyPin::Node.create_or_update(node_blueprint)
+    end
+
+    it "calls Node.update with arg when node exists at path" do
+      SafetyPin::Node.create(node_blueprint)
+      SafetyPin::Node.should_receive(:update).with(node_blueprint)
+      SafetyPin::Node.create_or_update(node_blueprint)
+    end
+
+    it "takes a node blueprint" do
+      SafetyPin::Node.create_or_update(node_blueprint)
+      SafetyPin::Node.exists?(node_blueprint.path).should be_true
+    end
+
+    it "takes an array of node blueprints" do
+      node_blueprints = [node_blueprint, SafetyPin::NodeBlueprint.new(:path => "/content/foo/bar")]
+      SafetyPin::Node.create_or_update(node_blueprints)
+      node_blueprints.each {|node_blueprint| SafetyPin::Node.exists?(node_blueprint.path).should be_true }
+    end
+  end
   
   describe "#find_or_create_child" do
     let(:parent) { SafetyPin::Node.create(SafetyPin::NodeBlueprint.new(:path => "/content/foo")) }

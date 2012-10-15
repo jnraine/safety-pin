@@ -30,10 +30,10 @@ module SafetyPin
     
     def self.build(node_blueprint)
       raise NodeError.new("NodeBlueprint is nil") if node_blueprint.nil?
-      raise NodeError.new("NodeBlueprint has non-absolute path") unless node_blueprint.path.start_with?("/")
+      raise NodeError.new("NodeBlueprint has non-absolute path") unless node_blueprint.path.to_s.start_with?("/")
       raise NodeError.new("Node already exists at path: #{node_blueprint.path}") if Node.exists?(node_blueprint.path)
       
-      rel_path_to_root_node = node_blueprint.path[1..-1]
+      rel_path_to_root_node = node_blueprint.path.to_s[1..-1]
       node = self.new(session.root_node.add_node(rel_path_to_root_node, node_blueprint.primary_type))
       node.properties = node_blueprint.properties
 
@@ -73,6 +73,17 @@ module SafetyPin
       session.save
 
       results
+    end
+
+    def self.create_or_update(node_blueprint_or_node_blueprints)
+      node_blueprints = Array(node_blueprint_or_node_blueprints)
+      node_blueprints.map do |node_blueprint|
+        if exists?(node_blueprint.path)
+          update(node_blueprint)
+        else
+          create(node_blueprint)
+        end
+      end
     end
 
     def initialize(j_node)
@@ -273,7 +284,7 @@ module SafetyPin
     def convert_hash_to_node_blueprint(hash)
       hash.keys.each do |key|
         if hash[key].is_a? Hash
-          hash[key] = convert_hash(hash[key])
+          hash[key] = convert_hash_to_node_blueprint(hash[key])
         end
       end
       NodeBlueprint.new(:path => :no_path, :properties => hash)
