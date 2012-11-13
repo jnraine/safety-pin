@@ -97,6 +97,17 @@ module SafetyPin
     def session
       @session ||= JCR.session
     end
+
+    def ==(other_node)
+      return false if other_node.nil?
+      return false unless other_node.respond_to?(:path)
+      self.path == other_node.path
+    end
+
+    def parent
+      raise NodeError.new("Root node does not have parent") if path == "/"
+      Node.new(j_node.parent)
+    end
     
     def children
       child_nodes = []

@@ -99,7 +99,7 @@ describe SafetyPin::Node do
     end
   end
 
-  describe ".create_or_update", :focus => true do
+  describe ".create_or_update" do
     let(:node_blueprint) { SafetyPin::NodeBlueprint.new(:path => "/content/foo") }
 
     it "calls Node.create with arg when nothing exists at path" do
@@ -664,6 +664,49 @@ describe SafetyPin::Node do
       child_node = node.create("bar", SafetyPin::NodeBlueprint.new(:path => :no_path, :properties => {foo: "bar"}))
       child_node.should_not be_new
       child_node.properties.should == {"foo" => "bar"}
+    end
+  end
+
+  describe "#==" do
+    it "finds two nodes with the same path to be the same" do
+      node1 = SafetyPin::Node.new(double(:j_node))
+      node1.should_receive(:path).and_return("/content/foo")
+      node2 = SafetyPin::Node.new(double(:j_node))
+      node2.should_receive(:path).and_return("/content/foo")
+
+      node1.should == node2
+    end
+
+    it "finds two nodes with different paths to be different" do
+      node1 = SafetyPin::Node.new(double(:j_node))
+      node1.should_receive(:path).and_return("/content/foo")
+      node2 = SafetyPin::Node.new(double(:j_node))
+      node2.should_receive(:path).and_return("/content/foo/bar")
+
+      node1.should_not == node2
+    end
+
+    it "returns false when passed an object that doesn't response to path" do
+      node1 = SafetyPin::Node.new(double(:j_node))
+      node1.stub(:path => "foo")
+      node1.should_not == Object.new
+    end
+
+    it "returns false when passed a nil object" do
+      node1 = SafetyPin::Node.new(double(:j_node))
+      node1.should_not == nil
+    end
+  end
+
+  describe "#parent", :focus => true do
+    let(:node) { SafetyPin::Node.create(SafetyPin::NodeBlueprint.new(:path => "/content/foo")) }
+
+    it "returns the parent node" do
+      node.parent.should == SafetyPin::Node.find("/content")
+    end
+
+    it "raises an error when called on the root node" do
+      expect { SafetyPin::Node.find("/").parent }.to raise_error(SafetyPin::NodeError)
     end
   end
 end
