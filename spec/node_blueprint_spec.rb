@@ -25,7 +25,7 @@ describe SafetyPin::NodeBlueprint do
 
   describe "#path" do
     it "requires a path" do
-      lambda { SafetyPin::NodeBlueprint.new({}).path }.should raise_error(NodeBlueprintError)
+      expect { SafetyPin::NodeBlueprint.new({}).path }.to raise_error(SafetyPin::NodeBlueprintError)
     end
 
     it "has a path" do
