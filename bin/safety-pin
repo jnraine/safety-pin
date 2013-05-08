@@ -1,0 +1,45 @@
+#!/usr/bin/env ruby
+require 'optparse'
+
+options = {}
+option_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: #{File.basename(__FILE__)} [-h HOST | -d]"
+
+  opts.on("-h", "--host HOST", "JCR host (e.g., http://localhost:4502)") do |host|
+    options[:host] = host
+  end
+
+  opts.on("-d", "Developer mode -- connects to http://admin:admin@localhost:4502") do |developer_mode|
+    options[:developer_mode] = !!developer_mode
+  end
+
+  opts.on_tail("--help", "Show this message") do
+    puts opts
+    exit
+  end
+end
+
+option_parser.parse!
+
+unless options[:host] || options[:developer_mode]
+  puts option_parser
+  exit 1
+end
+
+if options[:developer_mode]
+  host = "http://localhost:4502"
+  username = "admin"
+  password = "cq4me"
+else
+  host = options.fetch(:host)
+  print "Username: "
+  username = gets.chomp
+  print "Password: "
+  password = gets.chomp
+end
+
+ENV["HOST"] = host
+ENV["USERNAME"] = username
+ENV["PASSWORD"] = password
+
+exec "irb -r './console_loader' --simple-prompt"
