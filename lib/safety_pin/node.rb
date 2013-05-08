@@ -359,6 +359,27 @@ module SafetyPin
       
       NodeBlueprint.new(:path => path.to_s, :properties => properties, :primary_type => primary_type)
     end
+
+    def replace_property(opts)
+      opts = {recursive: false}.merge(opts)
+      name = opts.fetch(:name)
+      target = opts.fetch(:target)
+      replacement = opts.fetch(:replacement)
+
+      modified_nodes = []
+      if has_property(name) and self[name].match(target)
+        self[name] = replacement 
+        modified_nodes << self
+      end
+
+      modified_nodes << children.map {|child_node| child_node.replace_property(opts) } if opts.fetch(:recursive)
+
+      modified_nodes.flatten
+    end
+
+    def has_property(name)
+      properties.keys.include?(name)
+    end
   end
   
   class NodeError < Exception; end
