@@ -6,7 +6,7 @@ Gem::Specification.new do |gem|
   gem.email         = ["jnraine@gmail.com"]
   gem.description   = %q{An easy-to-use JCR connector for JRuby}
   gem.summary       = %q{JCR connector for JRuby}
-  gem.homepage      = ""
+  gem.homepage      = "https://github.com/jnraine/safety-pin"
 
   gem.files         = `git ls-files`.split($\)
   gem.executables   = gem.files.grep(%r{^bin/}).map{ |f| File.basename(f) }
