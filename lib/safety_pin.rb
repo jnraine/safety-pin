@@ -1,5 +1,7 @@
 $: << File.dirname(__FILE__)
 
+raise "Platform is #{RUBY_PLATFORM}, must be java. Please run using JRuby: http://jruby.org/" unless RUBY_PLATFORM == "java"
+
 require 'java'
 Dir.glob("**/*.jar").each {|jar| require jar }
 require 'safety_pin/jcr'
