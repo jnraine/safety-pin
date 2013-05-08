@@ -42,4 +42,5 @@ ENV["HOST"] = host
 ENV["USERNAME"] = username
 ENV["PASSWORD"] = password
 
-exec "irb -r './console_loader' --simple-prompt"
+path = File.expand_path("../console_loader", File.dirname(__FILE__))
+exec "irb -r '#{path}' --simple-prompt"
