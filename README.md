@@ -24,22 +24,63 @@ Or install it yourself as:
 
 You can interact with the JCR using Ruby code in ways you would expect:
 
+### Getting Started
+
 ```ruby
 require 'safety-pin'
 include SafetyPin
 
+# Login to a JCR
+JCR.login(hostname: "http://localhost:4502", username: "admin", password: "admin")
+
+```
+
+### Navigating
+
+```ruby
 node = Node.find("/content") # returns node at path
 node.child("foo")            # returns child by name
 node.children                # returns array of children
+node.parent                  # returns parent node
+```
 
+### Properties
+
+```ruby
+node = Node.find("/content")
 node.properties                    # returns hash of unprotected properties
 node.properties = {"bar" => "baz"} # replaces unprotected properties
 
 node["foo"]         # returns value of property
 node["foo"] = "bar" # assigns value to property
+```
 
-node.save    # saves changes to session
-node.refresh # reloads node from JCR
+### Saving to JCR
+
+```ruby
+node = Node.find("/content")
+node["foo"] = "Hello JCR"    # set value in session
+node.save                    # persisted changes to JCR
+
+node["foo"] = "baz"
+node["foo"]         # => "baz"
+node.refresh        # reloads node from JCR
+node["foo"]         # => "Hello JCR"
+```
+
+### Mass-assign Property Values
+
+```ruby
+node = Node.find("/content")
+node["foo"] # => "bar"
+node.children.first["foo"] # => "child foo"
+
+node.replace_property name: "foo", target: /.+/, replacement: "new value", recursive: true
+
+node["foo"] # => "new value"
+node.children.first["foo"] # => "new value"
+
+node.save # persist all changes to JCR
 ```
 
 ## Interactive Shell
