@@ -36,7 +36,7 @@ module SafetyPin
     end
 
     def self.dev_login
-      login(:hostname => "http://localhost:4502", :username => "admin", :password => "admin")
+      login(:hostname => "http://localhost:4502", :username => "admin", :password => "cq4me")
     end
   end
 end

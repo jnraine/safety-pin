@@ -360,18 +360,22 @@ module SafetyPin
       NodeBlueprint.new(:path => path.to_s, :properties => properties, :primary_type => primary_type)
     end
 
-    def replace_property(opts)
+    def replace_property(opts, &block)
       opts = {recursive: false}.merge(opts)
-      name = opts.fetch(:name)
-      target = opts.fetch(:target)
-      replacement = opts.fetch(:replacement)
+      name_pattern = opts.fetch(:name)
+      target_pattern = opts.fetch(:target)
+      replacement_block = block || lambda {|value| opts.fetch(:replacement) }
 
-      modified_nodes = []
-      if has_property(name) and self[name].match(target)
-        self[name] = replacement 
-        modified_nodes << self
+      modified = false
+      properties.each do |name, value|
+        if name.match(name_pattern) and value.match(target_pattern)
+          self[name] = replacement_block.call(value)
+          modified = true
+        end
       end
 
+      modified_nodes = []
+      modified_nodes << self if modified
       modified_nodes << children.map {|child_node| child_node.replace_property(opts) } if opts.fetch(:recursive)
 
       modified_nodes.flatten

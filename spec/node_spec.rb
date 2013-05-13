@@ -709,4 +709,56 @@ describe SafetyPin::Node do
       expect { SafetyPin::Node.find("/").parent }.to raise_error(SafetyPin::NodeError)
     end
   end
+
+  describe "#replace_property" do
+    let(:node) do
+      properties = {"bar" => "baz", "another" => "just for completeness", "barbell" => "for regex detail"}
+      blueprint = SafetyPin::NodeBlueprint.new(:path => "/content/foo", properties: properties)
+      SafetyPin::Node.create(blueprint)
+    end
+
+    it "requires a property name, a target regex/string, and a replacement value or block" do
+      expect { node.replace_property({})                         }.to raise_error(KeyError)
+      expect { node.replace_property(name: "bar")                }.to raise_error(KeyError)
+      expect { node.replace_property(name: "bar", target: /baz/) }.to raise_error(KeyError)
+      expect { node.replace_property(name: "bar", target: /baz/, replacement: "NOT BAZ") }.to_not raise_error
+      expect { node.replace_property(name: "bar", target: /baz/) {|value| "bob"} }.to_not raise_error
+    end
+
+    it "can take a regex property name" do
+      node.replace_property(name: /.+/, target: /.+/, replacement: "FOOFOO")
+      node.properties.values.each {|value| value.should == "FOOFOO" }
+    end
+
+    it "only replaces property values when the name matches" do
+      node.replace_property(name: /^bar.*/, target: /.+/, replacement: "FOOFOO")
+      node["bar"].should == "FOOFOO"
+      node["barbell"].should == "FOOFOO"
+      node["another"].should_not == "FOOFOO"
+    end
+
+    context "when given a block" do
+      it "yields the property value to the block and sets the property with the return of the block" do
+        node.replace_property(name: "bar", target: /.+/) {|value| value.upcase }
+        node["bar"].should == "BAZ"
+      end
+
+      it "ignores replacement value" do
+        node.replace_property(name: "bar", target: /.+/, replacement: "replacement value") {|value| value.upcase }
+        node["bar"].should == "BAZ"
+      end
+    end
+
+    it "returns modified nodes" do
+      node.replace_property(name: "bar", target: /.+/, replacement: "whatever").should have(1).item
+      node.replace_property(name: "asdf", target: /.+/, replacement: "whatever").should be_empty
+    end
+
+    it "does not save changes to JCR" do
+      node.replace_property(name: "bar", target: /.+/, replacement: "BAZ")
+      node["bar"].should == "BAZ"
+      node.reload
+      node["bar"].should_not == "BAZ"
+    end
+  end
 end
