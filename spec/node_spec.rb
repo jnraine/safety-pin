@@ -266,6 +266,13 @@ describe SafetyPin::Node do
         end
       end
 
+      context "given a pathname value" do
+        it "coers value to string" do
+          node.write_attribute("foo", Pathname("/content/foo"))
+          node["foo"].should == "/content/foo"
+        end
+      end
+
       context "given another supported value" do
         it "sets the property" do
           node.write_attribute("foo", 1)
@@ -291,6 +298,30 @@ describe SafetyPin::Node do
           node.save
           node.reload
           node["foo"].should eql("bar")
+        end
+      end
+
+      context "when changing a property from a single value to a multivalue" do
+        it "should work" do
+          node.write_attribute(:foo, "bar")
+          node.save
+          node.reload
+          node.write_attribute(:foo, ["bar"])
+          node.save
+          node.reload
+          node["foo"].should == ["bar"]
+        end
+      end
+
+      context "when changing a property from a multi value to a single value" do
+        it "wraps the value in an array (can't go from multi to single" do
+          node.write_attribute("foo", ["bar"])
+          node.save
+          node.reload
+          node.write_attribute("foo", "not bar")
+          node.save
+          node.reload
+          node["foo"].should == ["not bar"]
         end
       end
     end
@@ -759,6 +790,21 @@ describe SafetyPin::Node do
       node["bar"].should == "BAZ"
       node.reload
       node["bar"].should_not == "BAZ"
+    end
+  end
+
+  describe "#descendants" do
+    before do
+      SafetyPin::Node.create(SafetyPin::NodeBlueprint.new(path: "/content/foo"))
+      SafetyPin::Node.create(SafetyPin::NodeBlueprint.new(path: "/content/foo/bar"))
+      SafetyPin::Node.create(SafetyPin::NodeBlueprint.new(path: "/content/foo/bar/baz"))
+      SafetyPin::Node.create(SafetyPin::NodeBlueprint.new(path: "/content/foo/bar/baz/qux"))
+      SafetyPin::Node.create(SafetyPin::NodeBlueprint.new(path: "/content/foo/baz"))
+      SafetyPin::Node.create(SafetyPin::NodeBlueprint.new(path: "/content/foo/baz/qux"))
+    end
+
+    it "returns all nodes beneath this one" do
+      SafetyPin::Node.find("/content/foo").descendants.should have(5).items
     end
   end
 end

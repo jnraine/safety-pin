@@ -10,14 +10,14 @@ describe SafetyPin::JCR do
   end
   
   it "should login to a remote JCR" do
-    SafetyPin::JCR.login(:hostname => "http://localhost:4502", :username => "admin", :password => "admin")
+    SafetyPin::JCR.login(:hostname => "http://localhost:4502", :username => ENV["JCR_USERNAME"], :password => ENV["JCR_PASSWORD"])
     SafetyPin::JCR.session.should be_a(Java::JavaxJcr::Session)
     SafetyPin::JCR.should be_logged_in
     SafetyPin::JCR.logout
   end
   
   it "should logout of a remote SafetyPin::JCR" do
-    SafetyPin::JCR.login(:hostname => "http://localhost:4502", :username => "admin", :password => "admin")
+    SafetyPin::JCR.login(:hostname => "http://localhost:4502", :username => ENV["JCR_USERNAME"], :password => ENV["JCR_PASSWORD"])
     SafetyPin::JCR.logout
     SafetyPin::JCR.should be_logged_out
   end

@@ -2,6 +2,8 @@ require 'spec_helper.rb'
 
 describe "JCR-SQL2 example queries" do  
   before do
+    lingering_node = SafetyPin::Node.find("/content/foo")
+    lingering_node.destroy unless lingering_node.nil?
     @node = SafetyPin::Node.create("/content/foo")
     @node.properties = {"bar" => "baz", "qux" => "qax"}
     @node.save
@@ -46,6 +48,7 @@ describe "JCR-SQL2 example queries" do
   end
   
   it "can lookup a node based on node type" do
+    pending "too slow"
     nodes = SafetyPin::Query.execute("SELECT * FROM [cq:Page]")
     nodes.first.primary_type.should eql("cq:Page")
   end

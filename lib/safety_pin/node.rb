@@ -28,7 +28,13 @@ module SafetyPin
       JCR.session
     end
     
-    def self.build(node_blueprint)
+    def self.build(node_blueprint_or_path_string)      
+      if node_blueprint_or_path_string.respond_to?(:primary_type, :properties)
+        node_blueprint = node_blueprint_or_path_string
+      else
+        node_blueprint = NodeBlueprint.new(path: node_blueprint_or_path_string)
+      end
+
       raise NodeError.new("NodeBlueprint is nil") if node_blueprint.nil?
       raise NodeError.new("NodeBlueprint has non-absolute path") unless node_blueprint.path.to_s.start_with?("/")
       raise NodeError.new("Node already exists at path: #{node_blueprint.path}") if Node.exists?(node_blueprint.path)
@@ -51,8 +57,8 @@ module SafetyPin
       node
     end
     
-    def self.create(node_blueprint)
-      node = self.build(node_blueprint)
+    def self.create(node_blueprint_or_path_string)
+      node = self.build(node_blueprint_or_path_string)
       node.save
       node
     end
@@ -116,6 +122,10 @@ module SafetyPin
       end
       child_nodes
     end
+
+    def descendants
+      children.map {|child| [child, child.descendants] }.flatten
+    end
     
     def child(relative_path)
       child_j_node = j_node.get_node(relative_path.to_s)
@@ -170,11 +180,25 @@ module SafetyPin
         Time.at(value.date.time.time / 1000)
       when "Name"
         value.string # Not sure if these should be handled differently
+      when "Binary"
+        value.binary
+      when "Decimal"
+        value.decimal
+      when "Path"
+        Pathname(value.string)
       else
         raise PropertyTypeError.new("Unknown property type: #{property_type}")
       end
     end
     
+    def property_single_valued?(name)
+      properties.has_key?(name) and !property_multi_valued?(name)
+    end
+
+    def property_multi_valued?(name)
+      properties.has_key?(name) and properties[name].is_a?(Array)
+    end
+
     def write_attribute(name, value)
       raise PropertyError.new("Illegal operation: cannot change jcr:primaryType property") if name == "jcr:primaryType"
       name = name.to_s
@@ -182,8 +206,16 @@ module SafetyPin
       if value.nil? and not j_node.has_property(name)
         return nil
       end
+
+      # when going from multi to single value
+      if property_multi_valued?(name) and !value.is_a?(Array)
+        value = [value]
+      end
       
       if value.is_a? Array
+        if properties.has_key?(name) and property_single_valued?(name) # when going from single to multi value
+          j_node.set_property(name, nil)
+        end
         values = value
         val_fact = value_factory
         j_values = []
@@ -195,7 +227,7 @@ module SafetyPin
         calendar_value = Calendar.instance
         calendar_value.set_time(value.to_java)
         j_node.set_property(name, calendar_value)
-      elsif value.is_a? Symbol
+      elsif value.is_a?(Symbol) or value.is_a?(Pathname)
         j_node.set_property(name, value.to_s)
       else
         begin
@@ -383,6 +415,10 @@ module SafetyPin
 
     def has_property(name)
       properties.keys.include?(name)
+    end
+
+    def inspect
+      "#<#{self.class} path=#{path}>"
     end
   end
   
