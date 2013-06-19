@@ -199,23 +199,30 @@ module SafetyPin
       properties.has_key?(name) and properties[name].is_a?(Array)
     end
 
+    def has_property?(name)
+      j_node.has_property(name)
+    end
+
+    def remove_property(name)
+      j_node.get_property(name).remove if has_property?(name)
+    end
+
     def write_attribute(name, value)
       raise PropertyError.new("Illegal operation: cannot change jcr:primaryType property") if name == "jcr:primaryType"
       name = name.to_s
       
-      if value.nil? and not j_node.has_property(name)
+      if value.nil?
+        remove_property(name)
         return nil
       end
 
       # when going from multi to single value
       if property_multi_valued?(name) and !value.is_a?(Array)
-        value = [value]
+        remove_property(name)
       end
       
       if value.is_a? Array
-        if properties.has_key?(name) and property_single_valued?(name) # when going from single to multi value
-          j_node.set_property(name, nil)
-        end
+        remove_property(name)
         values = value
         val_fact = value_factory
         j_values = []

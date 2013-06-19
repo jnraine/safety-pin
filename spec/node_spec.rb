@@ -302,7 +302,7 @@ describe SafetyPin::Node do
       end
 
       context "when changing a property from a single value to a multivalue" do
-        it "should work" do
+        it "doesn't throw exceptions" do
           node.write_attribute(:foo, "bar")
           node.save
           node.reload
@@ -321,7 +321,17 @@ describe SafetyPin::Node do
           node.write_attribute("foo", "not bar")
           node.save
           node.reload
-          node["foo"].should == ["not bar"]
+          node["foo"].should == "not bar"
+        end
+
+        it "doesn't wrap nil" do
+          node.write_attribute("foo", ["bar"])
+          node.save
+          node.reload
+          node.write_attribute("foo", nil)
+          node.save
+          node.reload
+          node["foo"].should be_nil
         end
       end
     end
