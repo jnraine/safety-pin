@@ -33,11 +33,9 @@ module SafetyPin
     end
 
     def self.parse_hostname(hostname)
-      if hostname.end_with?("/crx/server")
-        hostname
-      else
-        hostname + "/crx/server"
-      end
+      url = URI.parse(hostname)
+      url.path = "/crx/server" if url.path == ""
+      url.to_s
     end
 
     def self.dev_login

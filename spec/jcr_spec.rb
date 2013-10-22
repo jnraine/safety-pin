@@ -23,9 +23,14 @@ describe SafetyPin::JCR do
   end
   
   context ".parse_hostname" do
-    it "ensures the hostname ends with /crx/server" do
+    it "add /crx/server as the path when none is present" do
       hostname = SafetyPin::JCR.parse_hostname("http://localhost:4502")
       hostname.end_with?("/crx/server").should be_true
+    end
+
+    it "doesn't mess with the path when one is present" do
+      hostname = SafetyPin::JCR.parse_hostname("http://localhost:8080/server") # like Jackrabbit
+      hostname.should == "http://localhost:8080/server"
     end
   end
 end
