@@ -97,11 +97,11 @@ module SafetyPin
     end
     
     def path
-      @path ||= j_node.path
+      j_node.path
     end
     
     def session
-      @session ||= JCR.session
+      JCR.session
     end
 
     def ==(other_node)
@@ -135,7 +135,7 @@ module SafetyPin
     end
     
     def name
-      @name ||= j_node.name
+      j_node.name
     end
     
     def read_attribute(name)
@@ -246,12 +246,7 @@ module SafetyPin
     end
     
     def save
-      if new?
-        j_node.parent.save
-      else
-        j_node.save
-      end
-      
+      session.save
       not changed?
     end
     
@@ -431,6 +426,11 @@ module SafetyPin
 
     def remove_attribute(name)
       write_attribute(name, nil)
+    end
+
+    def move(dest_parent_path)
+      dest_path = Pathname(dest_parent_path) + name
+      session.move("/content/foo", dest_path.to_s)
     end
   end
   

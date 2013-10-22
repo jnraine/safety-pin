@@ -1,6 +1,6 @@
 require 'spec_helper.rb'
 
-describe SafetyPin::Node do  
+describe SafetyPin::Node do
   describe ".find" do
     context "given a node name" do
       context "that exists" do
@@ -57,12 +57,6 @@ describe SafetyPin::Node do
   describe "#session" do
     it "should return a session" do
       SafetyPin::Node.find("/content").session.should be_a(Java::JavaxJcr::Session)
-    end
-    
-    it "should cache session in an instance variable" do
-      node = SafetyPin::Node.find("/content")
-      node.session
-      node.instance_eval { @session }.should be_a(Java::JavaxJcr::Session)
     end
   end
   
@@ -820,7 +814,7 @@ describe SafetyPin::Node do
 
   describe "#remove_attribute" do
     let(:node) do
-      blueprint = SafetyPin::NodeBlueprint.new(:path => "/content/foo", properties: {"foo" => "bar"})
+      blueprint = SafetyPin::NodeBlueprint.new(:path => "/content/foo", properties: {"foo" => "bar", "baz" => "qux"})
       SafetyPin::Node.create(blueprint)
     end
 
@@ -830,6 +824,34 @@ describe SafetyPin::Node do
       node.save
       node.refresh
       node.properties.keys.should_not include("foo")
+    end
+
+    it "silenty does nothing when given a non-existing attribute name" do
+      node.properties.keys.should_not include("whatever")
+      node.remove_attribute("whatever")
+    end
+  end
+
+  describe "#move" do
+    before do
+      if tmp_node = SafetyPin::Node.find("/tmp/foo")
+        tmp_node.destroy
+        tmp_node.save
+      end
+    end
+
+    let(:node) do
+      blueprint = SafetyPin::NodeBlueprint.new(:path => "/content/foo", properties: {"foo" => "bar", "baz" => "qux"})
+      SafetyPin::Node.create(blueprint)
+    end
+
+    it "moves the node to beneath the destination path" do
+      node.move("/tmp")
+      node.save
+      node.refresh
+      node.path.should == "/tmp/foo"
+      node.destroy
+      node.save
     end
   end
 end
