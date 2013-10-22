@@ -314,7 +314,7 @@ describe SafetyPin::Node do
       end
 
       context "when changing a property from a multi value to a single value" do
-        it "wraps the value in an array (can't go from multi to single" do
+        it "works as expected" do
           node.write_attribute("foo", ["bar"])
           node.save
           node.reload
@@ -324,14 +324,14 @@ describe SafetyPin::Node do
           node["foo"].should == "not bar"
         end
 
-        it "doesn't wrap nil" do
+        it "removes node when given nil" do
           node.write_attribute("foo", ["bar"])
           node.save
           node.reload
           node.write_attribute("foo", nil)
           node.save
           node.reload
-          node["foo"].should be_nil
+          node.properties.keys.should_not include("foo")
         end
       end
     end
