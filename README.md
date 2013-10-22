@@ -72,6 +72,8 @@ node["foo"]         # => "Hello JCR"
 
 You can query for nodes in a familair way. Under the covers, this uses the [Query Builder JSON API](http://dev.day.com/docs/en/cq/current/dam/customizing_and_extendingcq5dam/query_builder.html). This will not work on JCR servers that do not have this API.
 
+Note: This is new and a new release has not yet been built and pushed to RubyGems.org. If you'd like to use it, you can build the gem locally.
+
 ```ruby
 # Returns all page nodes page beneath /content/my-site
 QueryBuilder.execute(path: "/content/my-site", type: "cq:Page", "p.limit" => -1)
