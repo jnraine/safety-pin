@@ -8,6 +8,7 @@ require_relative 'safety_pin/node'
 require_relative 'safety_pin/node_blueprint'
 require_relative 'safety_pin/query'
 require_relative 'safety_pin/query/where_condition'
+require_relative 'safety_pin/query_builder'
 
 module SafetyPin
 end

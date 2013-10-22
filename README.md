@@ -68,6 +68,21 @@ node.refresh        # reloads node from JCR
 node["foo"]         # => "Hello JCR"
 ```
 
+### Querying
+
+You can query for nodes in a familair way. Under the covers, this uses the [Query Builder JSON API](http://dev.day.com/docs/en/cq/current/dam/customizing_and_extendingcq5dam/query_builder.html). This will not work on JCR servers that do not have this API.
+
+```ruby
+# Returns all page nodes page beneath /content/my-site
+QueryBuilder.execute(path: "/content/my-site", type: "cq:Page", "p.limit" => -1)
+
+# Returns up to 10 nodes matching a full text query string (limit defaults to 10)
+QueryBuilder.execute(fulltext: "Foo Bar")
+
+# Returns up to 10 nodes with matching property
+QueryBuilder.execute("property" => "sling:resourceType", "property.value" => "myapp/components/foo")
+```
+
 ### Mass-assign Property Values
 
 ```ruby

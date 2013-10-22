@@ -5,9 +5,14 @@ module SafetyPin
     include_class 'org.apache.jackrabbit.commons.JcrUtils'
 
     def self.login(opts = {})
+      @options = opts
       repository = JcrUtils.get_repository(parse_hostname(opts[:hostname]))
       creds = SimpleCredentials.new(opts[:username], JString.new(opts[:password]).to_char_array)
       @@session = repository.login(creds)
+    end
+
+    def self.options
+      @options
     end
 
     def self.logout
