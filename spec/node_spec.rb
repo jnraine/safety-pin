@@ -817,4 +817,19 @@ describe SafetyPin::Node do
       SafetyPin::Node.find("/content/foo").descendants.should have(5).items
     end
   end
+
+  describe "#remove_attribute" do
+    let(:node) do
+      blueprint = SafetyPin::NodeBlueprint.new(:path => "/content/foo", properties: {"foo" => "bar"})
+      SafetyPin::Node.create(blueprint)
+    end
+
+    it "deletes an attribute by name" do
+      node.properties.keys.should include("foo")
+      node.remove_attribute("foo")
+      node.save
+      node.refresh
+      node.properties.keys.should_not include("foo")
+    end
+  end
 end

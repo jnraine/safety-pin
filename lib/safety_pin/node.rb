@@ -258,6 +258,7 @@ module SafetyPin
     def reload
       j_node.refresh(false)
     end
+    alias_method :refresh, :reload
     
     def [](name)
       read_attribute(name)
@@ -426,6 +427,10 @@ module SafetyPin
 
     def inspect
       "#<#{self.class} path=#{path}>"
+    end
+
+    def remove_attribute(name)
+      write_attribute(name, nil)
     end
   end
   
