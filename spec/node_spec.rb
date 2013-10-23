@@ -1,74 +1,74 @@
 require 'spec_helper.rb'
 module SafetyPin
-describe SafetyPin::Node do
+describe Node do
   describe ".find" do
     context "given a node name" do
       context "that exists" do
         it "should return a node with a matching path" do
-          SafetyPin::Node.find("/content").path.should eql("/content")
+          Node.find("/content").path.should eql("/content")
         end
       end
     
       context "that doesn't exist" do
         it "should return nil" do
-          SafetyPin::Node.find("/foo/bar/baz").should be_nil
+          Node.find("/foo/bar/baz").should be_nil
         end
       end
     end
     
     it "complains if the path isn't an absolute path" do
-      lambda { node = SafetyPin::Node.find("content") }.should raise_exception(ArgumentError)
+      lambda { node = Node.find("content") }.should raise_exception(ArgumentError)
     end
   end
   
   describe ".find_or_create" do    
     context "given a node path that exists" do
       it "should return the node at that path" do
-        SafetyPin::Node.create(SafetyPin::NodeBlueprint.new(:path => "/content/foo"))
-        SafetyPin::Node.find_or_create("/content/foo").path.should eql "/content/foo"
+        Node.create(NodeBlueprint.new(:path => "/content/foo"))
+        Node.find_or_create("/content/foo").path.should eql "/content/foo"
       end
     end
     
     context "when node doesn't exist" do
       it "returns node created at path" do
-        SafetyPin::Node.find("/content/foo").should be_nil
-        SafetyPin::Node.find_or_create("/content/foo").path.should == "/content/foo"
+        Node.find("/content/foo").should be_nil
+        Node.find_or_create("/content/foo").path.should == "/content/foo"
       end
     end
   end
 
   describe ".exists?" do
     it "returns true if node exists at path" do
-      SafetyPin::Node.create(SafetyPin::NodeBlueprint.new(:path => "/content/foo"))
-      SafetyPin::Node.exists?("/content/foo").should be_true
+      Node.create(NodeBlueprint.new(:path => "/content/foo"))
+      Node.exists?("/content/foo").should be_true
     end
 
     it "returns false if node does not exist" do
-      SafetyPin::Node.exists?("/content/foo").should be_false
+      Node.exists?("/content/foo").should be_false
     end
   end
   
   describe ".session" do
     it "should return a session" do
-      SafetyPin::Node.session.should be_a(Java::JavaxJcr::Session)
+      Node.session.should be_a(Java::JavaxJcr::Session)
     end
   end
   
   describe "#session" do
     it "should return a session" do
-      SafetyPin::Node.find("/content").session.should be_a(Java::JavaxJcr::Session)
+      Node.find("/content").session.should be_a(Java::JavaxJcr::Session)
     end
   end
   
   describe "#children" do
     it "should return an array of child nodes" do
-      SafetyPin::Node.find("/content").children.first.should be_a(SafetyPin::Node)
+      Node.find("/content").children.first.should be_a(Node)
     end
   end
   
   describe "#child" do
     context "given a node name" do
-      let(:node) { SafetyPin::Node.find("/") }
+      let(:node) { Node.find("/") }
       
       context "that exists" do
         it "should return a child node with a matching name" do
@@ -76,7 +76,7 @@ describe SafetyPin::Node do
         end
         
         it "should return a grandchild node given a relative path" do
-          SafetyPin::Node.create(SafetyPin::NodeBlueprint.new(:path => "/content/foo"))
+          Node.create(NodeBlueprint.new(:path => "/content/foo"))
           node.child("content/foo").name.should eql("foo")
         end
       end
@@ -94,33 +94,33 @@ describe SafetyPin::Node do
   end
 
   describe ".create_or_update" do
-    let(:node_blueprint) { SafetyPin::NodeBlueprint.new(:path => "/content/foo") }
+    let(:node_blueprint) { NodeBlueprint.new(:path => "/content/foo") }
 
     it "calls Node.create with arg when nothing exists at path" do
-      SafetyPin::Node.should_receive(:create).with(node_blueprint)
-      SafetyPin::Node.create_or_update(node_blueprint)
+      Node.should_receive(:create).with(node_blueprint)
+      Node.create_or_update(node_blueprint)
     end
 
     it "calls Node.update with arg when node exists at path" do
-      SafetyPin::Node.create(node_blueprint)
-      SafetyPin::Node.should_receive(:update).with(node_blueprint)
-      SafetyPin::Node.create_or_update(node_blueprint)
+      Node.create(node_blueprint)
+      Node.should_receive(:update).with(node_blueprint)
+      Node.create_or_update(node_blueprint)
     end
 
     it "takes a node blueprint" do
-      SafetyPin::Node.create_or_update(node_blueprint)
-      SafetyPin::Node.exists?(node_blueprint.path).should be_true
+      Node.create_or_update(node_blueprint)
+      Node.exists?(node_blueprint.path).should be_true
     end
 
     it "takes an array of node blueprints" do
-      node_blueprints = [node_blueprint, SafetyPin::NodeBlueprint.new(:path => "/content/foo/bar")]
-      SafetyPin::Node.create_or_update(node_blueprints)
-      node_blueprints.each {|node_blueprint| SafetyPin::Node.exists?(node_blueprint.path).should be_true }
+      node_blueprints = [node_blueprint, NodeBlueprint.new(:path => "/content/foo/bar")]
+      Node.create_or_update(node_blueprints)
+      node_blueprints.each {|node_blueprint| Node.exists?(node_blueprint.path).should be_true }
     end
   end
   
   describe "#find_or_create_child" do
-    let(:parent) { SafetyPin::Node.create(SafetyPin::NodeBlueprint.new(:path => "/content/foo")) }
+    let(:parent) { Node.create(NodeBlueprint.new(:path => "/content/foo")) }
     
     context "an existing node path" do
       it "should return the child node" do
@@ -138,14 +138,14 @@ describe SafetyPin::Node do
   
   describe "#name" do
     it "should return a string name" do
-      SafetyPin::Node.find("/content").name.should eql("content")
+      Node.find("/content").name.should eql("content")
     end
   end
   
   describe "#save" do
     context "on an existing node with changes" do
       before do 
-        @node = SafetyPin::Node.create(SafetyPin::NodeBlueprint.new(:path => "/content/foo"))
+        @node = Node.create(NodeBlueprint.new(:path => "/content/foo"))
         @node["bar"] = "baz"
       end
     
@@ -163,13 +163,13 @@ describe SafetyPin::Node do
     
     context "on a new node" do      
       it "should save the node" do
-        node = SafetyPin::Node.build(SafetyPin::NodeBlueprint.new(:path => "/content/foo"))
+        node = Node.build(NodeBlueprint.new(:path => "/content/foo"))
         node.save.should be_true
       end
       
       it "should save changes in parent node" do
-        parent_node = SafetyPin::Node.create(SafetyPin::NodeBlueprint.new(:path => "/content/foo"))
-        node = SafetyPin::Node.build(SafetyPin::NodeBlueprint.new(:path => "/content/foo/bar"))
+        parent_node = Node.create(NodeBlueprint.new(:path => "/content/foo"))
+        node = Node.build(NodeBlueprint.new(:path => "/content/foo/bar"))
         parent_node["baz"] = "qux"
         parent_node.should be_changed
         node.save
@@ -180,7 +180,7 @@ describe SafetyPin::Node do
   
   describe "#read_attribute" do
     context "on an existing node" do
-      let(:node) { SafetyPin::Node.create(SafetyPin::NodeBlueprint.new(:path => "/content/foo")) }
+      let(:node) { Node.create(NodeBlueprint.new(:path => "/content/foo")) }
     
       it "should return the string value of a string property" do
         node["foo"] = "bar"
@@ -224,16 +224,16 @@ describe SafetyPin::Node do
     end
     
     it "should return the string value of a name property" do
-      SafetyPin::Node.find("/")["jcr:primaryType"].should eql("rep:root")
+      Node.find("/")["jcr:primaryType"].should eql("rep:root")
     end
     
     it "should throw an exception when accessing a non-existent (nil) property" do
-      lambda { SafetyPin::Node.build(SafetyPin::NodeBlueprint.new(:path => "/content/foo")).read_attribute("foo-bar-baz") }.should raise_error(SafetyPin::NilPropertyError)
+      lambda { Node.build(NodeBlueprint.new(:path => "/content/foo")).read_attribute("foo-bar-baz") }.should raise_error(NilPropertyError)
     end
   end
   
   context "#write_attribute" do
-    let(:node) { SafetyPin::Node.create(SafetyPin::NodeBlueprint.new(:path => "/content/foo")) }
+    let(:node) { Node.create(NodeBlueprint.new(:path => "/content/foo")) }
      
     context "given a single value" do
       it "should set a string property value" do
@@ -282,7 +282,7 @@ describe SafetyPin::Node do
 
       context "given an unsupported value" do
         it "raises an error" do
-          lambda { node.write_attribute("foo", {unsupported: :value_type}) }.should raise_error(SafetyPin::PropertyTypeError)
+          lambda { node.write_attribute("foo", {unsupported: :value_type}) }.should raise_error(PropertyTypeError)
         end
       end
       
@@ -345,7 +345,7 @@ describe SafetyPin::Node do
       it "should remove the property" do
         node["foo"] = "bar"
         node.write_attribute("foo", nil)
-        lambda { node["foo"] }.should raise_error(SafetyPin::NilPropertyError)
+        lambda { node["foo"] }.should raise_error(NilPropertyError)
       end
       
       context "given a non-existent property and a null value" do
@@ -357,33 +357,33 @@ describe SafetyPin::Node do
 
     context "changing jcr:primaryType property" do
       it "should raise an error" do
-       lambda { node.write_attribute("jcr:primaryType", "nt:folder") }.should raise_error(SafetyPin::PropertyError)
+       lambda { node.write_attribute("jcr:primaryType", "nt:folder") }.should raise_error(PropertyError)
       end
     end
   end
   
   context "#reload" do
-    let(:node) { SafetyPin::Node.create(SafetyPin::NodeBlueprint.new(:path => "/content/foo")) }
+    let(:node) { Node.create(NodeBlueprint.new(:path => "/content/foo")) }
     
     it "should discard pending changes" do
       node["foo"] = "bar"
       node.reload
-      lambda { node.read_attribute("foo") }.should raise_error(SafetyPin::NilPropertyError)
+      lambda { node.read_attribute("foo") }.should raise_error(NilPropertyError)
     end
     
     it "should not discard changes for another node" do
       node["bar"] = "baz"
-      another_node = SafetyPin::Node.find("/content")
+      another_node = Node.find("/content")
       another_node["bar"] = "baz"
       node.reload
-      lambda { node["bar"] }.should raise_error(SafetyPin::NilPropertyError)
+      lambda { node["bar"] }.should raise_error(NilPropertyError)
       another_node["bar"].should eql("baz")
     end
   end
   
   describe "#[]" do
     it "should return the value of a given property name" do
-      node = SafetyPin::Node.create(SafetyPin::NodeBlueprint.new(:path => "/content/foo"))
+      node = Node.create(NodeBlueprint.new(:path => "/content/foo"))
       node.write_attribute("bar","baz")
       node.save
       node["bar"].should eql("baz")
@@ -392,7 +392,7 @@ describe SafetyPin::Node do
   
   describe "#[]=" do    
     it "should set the value of a given property name" do
-      node = SafetyPin::Node.create(SafetyPin::NodeBlueprint.new(:path => "/content/foo"))
+      node = Node.create(NodeBlueprint.new(:path => "/content/foo"))
       node.write_attribute("bar","baz")
       node["bar"] = "qux"
       node["bar"].should eql("qux")
@@ -401,7 +401,7 @@ describe SafetyPin::Node do
   end
   
   context "#changed?" do
-    let(:node) { SafetyPin::Node.find("/content") }
+    let(:node) { Node.find("/content") }
 
     it "should return false if the node does not have unsaved changes" do
       node.should_not be_changed
@@ -415,22 +415,22 @@ describe SafetyPin::Node do
   
   context "#new?" do
     it "should return true if node has never been saved to JCR" do
-      SafetyPin::Node.build(SafetyPin::NodeBlueprint.new(:path => "/content/foo")).should be_new
+      Node.build(NodeBlueprint.new(:path => "/content/foo")).should be_new
     end
     
     it "should return false if node has been saved to JCR" do
-      SafetyPin::Node.find("/content").should_not be_new
+      Node.find("/content").should_not be_new
     end
   end
 
   describe "#properties" do
     it "should return hash of all unprotected properties" do
-      SafetyPin::Node.find("/").properties.should eql({"sling:target"=>"/index.html", "sling:resourceType"=>"sling:redirect"})
+      Node.find("/").properties.should eql({"sling:target"=>"/index.html", "sling:resourceType"=>"sling:redirect"})
     end
   end
   
   describe "#properties=" do
-    let(:node) { SafetyPin::Node.create(SafetyPin::NodeBlueprint.new(:path => "/content/foo")) }
+    let(:node) { Node.create(NodeBlueprint.new(:path => "/content/foo")) }
     
     it "should set the properties of a node" do
       node.properties = {"foo" => "bar"}
@@ -444,7 +444,7 @@ describe SafetyPin::Node do
     end
 
     it "creates child nodes for node blueprints" do
-      node_blueprint = SafetyPin::NodeBlueprint.new(:path => "/this/path/gets/thrown/away", 
+      node_blueprint = NodeBlueprint.new(:path => "/this/path/gets/thrown/away", 
                                                     :primary_type => "sling:OrderedFolder", 
                                                     :properties => {"bar" => "baz"})
       node.properties = {"foo" => node_blueprint}
@@ -458,7 +458,7 @@ describe SafetyPin::Node do
       node.child(:bar).create(:baz)
       node.child(:bar).child(:baz).path.should == "/content/foo/bar/baz"
       # Update /content/foo/bar by updating /content/foo properties
-      node.properties = {bar: SafetyPin::NodeBlueprint.new(:path => "/this/path/gets/thrown/away", :primary_type => "sling:OrderedFolder", :properties => {"updated" => "props"})}
+      node.properties = {bar: NodeBlueprint.new(:path => "/this/path/gets/thrown/away", :primary_type => "sling:OrderedFolder", :properties => {"updated" => "props"})}
       node.child(:bar).properties.should == {"updated" => "props"}
       node.child(:bar).primary_type.should == "sling:OrderedFolder"
       node.child(:bar).child(:baz).path.should == "/content/foo/bar/baz"
@@ -467,13 +467,13 @@ describe SafetyPin::Node do
   
   describe "#protected_properties" do
     it "should return hash of all protected properties" do
-      SafetyPin::Node.find("/").protected_properties.should eql({"jcr:primaryType"=>"rep:root", "jcr:mixinTypes"=>["rep:AccessControllable", "rep:RepoAccessControllable"]})
+      Node.find("/").protected_properties.should eql({"jcr:primaryType"=>"rep:root", "jcr:mixinTypes"=>["rep:AccessControllable", "rep:RepoAccessControllable"]})
     end
   end
   
   describe "#mixin_types" do
     it "should return the mixin types of a node" do
-      node = SafetyPin::Node.create(SafetyPin::NodeBlueprint.new(:path => "/content/foo"))
+      node = Node.create(NodeBlueprint.new(:path => "/content/foo"))
       node.j_node.add_mixin("mix:created")
       node.save
       node.mixin_types.should eql(["mix:created"])
@@ -481,7 +481,7 @@ describe SafetyPin::Node do
   end
   
   describe "#add_mixin" do
-    let(:node) { SafetyPin::Node.create(SafetyPin::NodeBlueprint.new(:path => "/content/foo")) }
+    let(:node) { Node.create(NodeBlueprint.new(:path => "/content/foo")) }
   
     it "should add a mixin type to node" do
       node.add_mixin("mix:created")
@@ -497,7 +497,7 @@ describe SafetyPin::Node do
   
   describe "#remove_mixin" do
     let(:node) do 
-      node = SafetyPin::Node.create(SafetyPin::NodeBlueprint.new(:path => "/content/foo")) 
+      node = Node.create(NodeBlueprint.new(:path => "/content/foo")) 
       node.add_mixin("mix:created")
       node.save
       node
@@ -519,31 +519,31 @@ describe SafetyPin::Node do
 
   describe ".update" do
     let(:node) do 
-      node = SafetyPin::Node.create(SafetyPin::NodeBlueprint.new(:path => "/content/foo"))
+      node = Node.create(NodeBlueprint.new(:path => "/content/foo"))
       node.save
       node
     end
 
     it "updates a nodes properties" do
-      SafetyPin::Node.update(SafetyPin::NodeBlueprint.new(:path => node.path, :properties => {"foo" => "barbazbuzzzzz"}))
-      SafetyPin::Node.find(node.path).properties.should == {"foo" => "barbazbuzzzzz"}
+      Node.update(NodeBlueprint.new(:path => node.path, :properties => {"foo" => "barbazbuzzzzz"}))
+      Node.find(node.path).properties.should == {"foo" => "barbazbuzzzzz"}
     end
 
     it "preserves node children" do
       node.create(:bar)
-      SafetyPin::Node.update(SafetyPin::NodeBlueprint.new(:path => node.path, :primary_type => "sling:OrderedFolder", :properties => {"foo" => "bar"}))
-      SafetyPin::Node.exists?("/content/foo/bar").should be_true
+      Node.update(NodeBlueprint.new(:path => node.path, :primary_type => "sling:OrderedFolder", :properties => {"foo" => "bar"}))
+      Node.exists?("/content/foo/bar").should be_true
     end
 
     it "modifies the primary type" do
-      SafetyPin::Node.update(SafetyPin::NodeBlueprint.new(:path => node.path, :primary_type => "sling:OrderedFolder"))
-      SafetyPin::Node.find(node.path).primary_type.should == "sling:OrderedFolder"
+      Node.update(NodeBlueprint.new(:path => node.path, :primary_type => "sling:OrderedFolder"))
+      Node.find(node.path).primary_type.should == "sling:OrderedFolder"
     end
   end
 
   describe "#primary_type=" do
     let(:node) do 
-      node = SafetyPin::Node.create(SafetyPin::NodeBlueprint.new(:path => "/content/foo"))
+      node = Node.create(NodeBlueprint.new(:path => "/content/foo"))
       node.save
       node
     end
@@ -552,65 +552,65 @@ describe SafetyPin::Node do
       node.primary_type.should == "nt:unstructured"
       node.primary_type = "sling:OrderedFolder"
       node.save
-      SafetyPin::Node.find(node.path).primary_type.should == "sling:OrderedFolder"
+      Node.find(node.path).primary_type.should == "sling:OrderedFolder"
     end
   end
 
   describe ".build" do
     it "returns an unsaved node at path of a specified type with properties set" do
-      node = SafetyPin::Node.build(SafetyPin::NodeBlueprint.new(:path => "/content/foo", :primary_type => "sling:OrderedFolder", :properties => {"foo" => "bar"}))
+      node = Node.build(NodeBlueprint.new(:path => "/content/foo", :primary_type => "sling:OrderedFolder", :properties => {"foo" => "bar"}))
       node.should be_new
       node.primary_type.should == "sling:OrderedFolder"
       node.properties.should == {"foo" => "bar"}
     end
 
     it "complains when the nodes already exists" do
-      node_blueprint = SafetyPin::NodeBlueprint.new(:path => "/content/foo")
-      SafetyPin::Node.create(node_blueprint)
-      lambda { SafetyPin::Node.build(node_blueprint) }.should raise_error(SafetyPin::NodeError)
+      node_blueprint = NodeBlueprint.new(:path => "/content/foo")
+      Node.create(node_blueprint)
+      lambda { Node.build(node_blueprint) }.should raise_error(NodeError)
     end
 
     it "complains when given a path with missing parents" do
-      lambda { SafetyPin::Node.build(SafetyPin::NodeBlueprint.new(:path => "/content/foo/bar/baz/doesnt/exist")) }.should raise_error(SafetyPin::NodeError)
+      lambda { Node.build(NodeBlueprint.new(:path => "/content/foo/bar/baz/doesnt/exist")) }.should raise_error(NodeError)
     end
 
     it "complains when given a relative path" do
-      lambda { SafetyPin::Node.build(SafetyPin::NodeBlueprint.new(:path => "foo/not/absolute")) }.should raise_error(SafetyPin::NodeError)
+      lambda { Node.build(NodeBlueprint.new(:path => "foo/not/absolute")) }.should raise_error(NodeError)
     end
 
     it "complains when given nil" do
-      lambda { SafetyPin::Node.build(nil) }.should raise_error(SafetyPin::NodeError)
+      lambda { Node.build(nil) }.should raise_error(NodeError)
     end
   end
   
   describe ".create" do
     it "creates a node" do
-      node = SafetyPin::Node.create(SafetyPin::NodeBlueprint.new(:path => "/content/foo"))
-      node.should be_a(SafetyPin::Node)
+      node = Node.create(NodeBlueprint.new(:path => "/content/foo"))
+      node.should be_a(Node)
     end
     
     it "creates a node of a specific type" do
-      SafetyPin::Node.create(SafetyPin::NodeBlueprint.new(:path => "/content/foo", :primary_type => "sling:OrderedFolder"))
-      SafetyPin::Node.find("/content/foo").primary_type.should == "sling:OrderedFolder"
+      Node.create(NodeBlueprint.new(:path => "/content/foo", :primary_type => "sling:OrderedFolder"))
+      Node.find("/content/foo").primary_type.should == "sling:OrderedFolder"
     end
   end
 
   describe ".create_parents" do
     it "creates parent nodes if they do not exist" do
-      SafetyPin::Node.create_parents("/content/foo/bar/baz")
-      SafetyPin::Node.create(SafetyPin::NodeBlueprint.new(:path => "/content/foo/bar/baz")).should_not be_nil
+      Node.create_parents("/content/foo/bar/baz")
+      Node.create(NodeBlueprint.new(:path => "/content/foo/bar/baz")).should_not be_nil
     end
   end
   
   context "#value_factory" do
     it "should return a value factory instance" do
-      SafetyPin::Node.find("/content").value_factory.should be_a(Java::JavaxJcr::ValueFactory)
+      Node.find("/content").value_factory.should be_a(Java::JavaxJcr::ValueFactory)
     end
   end
   
   describe "#property_is_multi_valued" do
     it "should return true if property is multi-valued" do
-      node = SafetyPin::Node.create(SafetyPin::NodeBlueprint.new(:path => "/content/foo"))
+      node = Node.create(NodeBlueprint.new(:path => "/content/foo"))
       node["bar"] = ["baz", "qux"]
       node.save
       property = node.j_node.get_property("bar")
@@ -618,7 +618,7 @@ describe SafetyPin::Node do
     end
     
     it "should return false if property is not multi-valued" do
-      node = SafetyPin::Node.create(SafetyPin::NodeBlueprint.new(:path => "/content/foo"))
+      node = Node.create(NodeBlueprint.new(:path => "/content/foo"))
       node["bar"] = "baz"
       node.save
       property = node.j_node.get_property("bar")
@@ -629,14 +629,14 @@ describe SafetyPin::Node do
   describe "#destroy" do
     it "should remove node from JCR" do
       path = "/content/foo"
-      node = SafetyPin::Node.create(SafetyPin::NodeBlueprint.new(:path => path))
+      node = Node.create(NodeBlueprint.new(:path => path))
       node.destroy
-      SafetyPin::Node.find(path).should be_nil
+      Node.find(path).should be_nil
     end
     
     it "should save changes in parent node" do
-      parent_node = SafetyPin::Node.create(SafetyPin::NodeBlueprint.new(:path => "/content/foo"))
-      node = SafetyPin::Node.create(SafetyPin::NodeBlueprint.new(:path => "/content/foo/bar"))
+      parent_node = Node.create(NodeBlueprint.new(:path => "/content/foo"))
+      node = Node.create(NodeBlueprint.new(:path => "/content/foo/bar"))
       parent_node["baz"] = "qux"
       parent_node.should be_changed
       node.destroy
@@ -645,17 +645,17 @@ describe SafetyPin::Node do
     
     context "when it fails" do      
       it "should raise an error" do
-        node = SafetyPin::Node.create(SafetyPin::NodeBlueprint.new(:path => "/content/foo"))
+        node = Node.create(NodeBlueprint.new(:path => "/content/foo"))
         node.add_mixin("mix:created")
         node.save
         node.remove_mixin("mix:created") # make node unremoveable
-        lambda { node.destroy }.should raise_error(SafetyPin::NodeError)
+        lambda { node.destroy }.should raise_error(NodeError)
       end
     end
   end
   
   describe "#primary_type" do
-    let(:node) { SafetyPin::Node.create(SafetyPin::NodeBlueprint.new(:path => "/content/foo")) }
+    let(:node) { Node.create(NodeBlueprint.new(:path => "/content/foo")) }
     
     it "should return the primary type of the node" do
       node.primary_type.should eql("nt:unstructured")
@@ -663,25 +663,25 @@ describe SafetyPin::Node do
   end
   
   describe "#build" do
-    let(:node) { SafetyPin::Node.create(SafetyPin::NodeBlueprint.new(:path => "/content/foo")) }
+    let(:node) { Node.create(NodeBlueprint.new(:path => "/content/foo")) }
     
     it "should create a child node with a given name" do
       node.build("bar").path.should == "/content/foo/bar"
     end
     
     it "should create a child node with a given name and node type" do
-      child_node = node.build("bar", SafetyPin::NodeBlueprint.new(:primary_type => "nt:folder", :path => :no_path))
-      child_node.should be_a(SafetyPin::Node)
+      child_node = node.build("bar", NodeBlueprint.new(:primary_type => "nt:folder", :path => :no_path))
+      child_node.should be_a(Node)
       child_node.primary_type.should == "nt:folder"
     end
 
     it "should create a child node with a name, node type, and properties" do
-      node.build("bar", SafetyPin::NodeBlueprint.new(:path => :no_path, :properties => {foo: "bar"})).properties.should == {"foo" => "bar"}
+      node.build("bar", NodeBlueprint.new(:path => :no_path, :properties => {foo: "bar"})).properties.should == {"foo" => "bar"}
     end
   end
 
   describe "#create" do
-    let(:node) { SafetyPin::Node.create(SafetyPin::NodeBlueprint.new(:path => "/content/foo")) }
+    let(:node) { Node.create(NodeBlueprint.new(:path => "/content/foo")) }
     
     it "should create a child node with a given name" do
       child_node = node.create("bar")
@@ -690,13 +690,13 @@ describe SafetyPin::Node do
     end
     
     it "should create a child node with a given name and node type" do
-      child_node = node.create("bar", SafetyPin::NodeBlueprint.new(:path => :no_path, :primary_type => "nt:folder"))
+      child_node = node.create("bar", NodeBlueprint.new(:path => :no_path, :primary_type => "nt:folder"))
       child_node.should_not be_new
       child_node.primary_type.should eql("nt:folder")
     end
 
     it "should create a child node with a name, node type, and properties" do
-      child_node = node.create("bar", SafetyPin::NodeBlueprint.new(:path => :no_path, :properties => {foo: "bar"}))
+      child_node = node.create("bar", NodeBlueprint.new(:path => :no_path, :properties => {foo: "bar"}))
       child_node.should_not be_new
       child_node.properties.should == {"foo" => "bar"}
     end
@@ -704,52 +704,52 @@ describe SafetyPin::Node do
 
   describe "#==" do
     it "finds two nodes with the same path to be the same" do
-      node1 = SafetyPin::Node.new(double(:j_node))
+      node1 = Node.new(double(:j_node))
       node1.should_receive(:path).and_return("/content/foo")
-      node2 = SafetyPin::Node.new(double(:j_node))
+      node2 = Node.new(double(:j_node))
       node2.should_receive(:path).and_return("/content/foo")
 
       node1.should == node2
     end
 
     it "finds two nodes with different paths to be different" do
-      node1 = SafetyPin::Node.new(double(:j_node))
+      node1 = Node.new(double(:j_node))
       node1.should_receive(:path).and_return("/content/foo")
-      node2 = SafetyPin::Node.new(double(:j_node))
+      node2 = Node.new(double(:j_node))
       node2.should_receive(:path).and_return("/content/foo/bar")
 
       node1.should_not == node2
     end
 
     it "returns false when passed an object that doesn't response to path" do
-      node1 = SafetyPin::Node.new(double(:j_node))
+      node1 = Node.new(double(:j_node))
       node1.stub(:path => "foo")
       node1.should_not == Object.new
     end
 
     it "returns false when passed a nil object" do
-      node1 = SafetyPin::Node.new(double(:j_node))
+      node1 = Node.new(double(:j_node))
       node1.should_not == nil
     end
   end
 
   describe "#parent", :focus => true do
-    let(:node) { SafetyPin::Node.create(SafetyPin::NodeBlueprint.new(:path => "/content/foo")) }
+    let(:node) { Node.create(NodeBlueprint.new(:path => "/content/foo")) }
 
     it "returns the parent node" do
-      node.parent.should == SafetyPin::Node.find("/content")
+      node.parent.should == Node.find("/content")
     end
 
     it "raises an error when called on the root node" do
-      expect { SafetyPin::Node.find("/").parent }.to raise_error(SafetyPin::NodeError)
+      expect { Node.find("/").parent }.to raise_error(NodeError)
     end
   end
 
   describe "#replace_property" do
     let(:node) do
       properties = {"bar" => "baz", "another" => "just for completeness", "barbell" => "for regex detail"}
-      blueprint = SafetyPin::NodeBlueprint.new(:path => "/content/foo", properties: properties)
-      SafetyPin::Node.create(blueprint)
+      blueprint = NodeBlueprint.new(:path => "/content/foo", properties: properties)
+      Node.create(blueprint)
     end
 
     it "requires a property name, a target regex/string, and a replacement value or block" do
@@ -799,23 +799,23 @@ describe SafetyPin::Node do
 
   describe "#descendants" do
     before do
-      SafetyPin::Node.create(SafetyPin::NodeBlueprint.new(path: "/content/foo"))
-      SafetyPin::Node.create(SafetyPin::NodeBlueprint.new(path: "/content/foo/bar"))
-      SafetyPin::Node.create(SafetyPin::NodeBlueprint.new(path: "/content/foo/bar/baz"))
-      SafetyPin::Node.create(SafetyPin::NodeBlueprint.new(path: "/content/foo/bar/baz/qux"))
-      SafetyPin::Node.create(SafetyPin::NodeBlueprint.new(path: "/content/foo/baz"))
-      SafetyPin::Node.create(SafetyPin::NodeBlueprint.new(path: "/content/foo/baz/qux"))
+      Node.create(NodeBlueprint.new(path: "/content/foo"))
+      Node.create(NodeBlueprint.new(path: "/content/foo/bar"))
+      Node.create(NodeBlueprint.new(path: "/content/foo/bar/baz"))
+      Node.create(NodeBlueprint.new(path: "/content/foo/bar/baz/qux"))
+      Node.create(NodeBlueprint.new(path: "/content/foo/baz"))
+      Node.create(NodeBlueprint.new(path: "/content/foo/baz/qux"))
     end
 
     it "returns all nodes beneath this one" do
-      SafetyPin::Node.find("/content/foo").descendants.should have(5).items
+      Node.find("/content/foo").descendants.should have(5).items
     end
   end
 
   describe "#remove_attribute" do
     let(:node) do
-      blueprint = SafetyPin::NodeBlueprint.new(:path => "/content/foo", properties: {"foo" => "bar", "baz" => "qux"})
-      SafetyPin::Node.create(blueprint)
+      blueprint = NodeBlueprint.new(:path => "/content/foo", properties: {"foo" => "bar", "baz" => "qux"})
+      Node.create(blueprint)
     end
 
     it "deletes an attribute by name" do
@@ -834,7 +834,7 @@ describe SafetyPin::Node do
 
   describe "#move" do
     before do
-      if tmp_node = SafetyPin::Node.find("/tmp/foo")
+      if tmp_node = Node.find("/tmp/foo")
         tmp_node.destroy
         tmp_node.save
       end
@@ -842,7 +842,7 @@ describe SafetyPin::Node do
 
     after do
       ["/tmp/foo", "/tmp/bar"].each do |path|
-        if node = SafetyPin::Node.find(path)
+        if node = Node.find(path)
           node.destroy
           node.save
         end
@@ -850,8 +850,8 @@ describe SafetyPin::Node do
     end
 
     let(:node) do
-      blueprint = SafetyPin::NodeBlueprint.new(:path => "/content/foo", properties: {"foo" => "bar", "baz" => "qux"})
-      SafetyPin::Node.create(blueprint)
+      blueprint = NodeBlueprint.new(:path => "/content/foo", properties: {"foo" => "bar", "baz" => "qux"})
+      Node.create(blueprint)
     end
 
     it "moves the node to beneath the destination path" do
@@ -862,16 +862,16 @@ describe SafetyPin::Node do
     end
 
     it "raises an error when a node exists at the destination" do
-      SafetyPin::Node.create(SafetyPin::NodeBlueprint.new(:path => "/tmp/bar"))
-      SafetyPin::Node.create(SafetyPin::NodeBlueprint.new(:path => "/tmp/bar/#{node.name}"))
-      expect { node.move("/tmp/bar") }.to raise_error(SafetyPin::NodeError)
+      Node.create(NodeBlueprint.new(:path => "/tmp/bar"))
+      Node.create(NodeBlueprint.new(:path => "/tmp/bar/#{node.name}"))
+      expect { node.move("/tmp/bar") }.to raise_error(NodeError)
     end
   end
 
   describe "#parents" do
     let(:node) do
-      blueprint = SafetyPin::NodeBlueprint.new(:path => "/content/foo", properties: {"foo" => "bar", "baz" => "qux"})
-      SafetyPin::Node.create(blueprint)
+      blueprint = NodeBlueprint.new(:path => "/content/foo", properties: {"foo" => "bar", "baz" => "qux"})
+      Node.create(blueprint)
     end
 
     it "returns all parents up to and including the root node" do
@@ -881,11 +881,11 @@ describe SafetyPin::Node do
 
   describe "#root?" do
     it "returns true when node is root node" do
-      SafetyPin::Node.find("/").root?.should == true
+      Node.find("/").root?.should == true
     end
 
     it "returns false for any other node" do
-      SafetyPin::Node.find("/content").root?.should == false
+      Node.find("/content").root?.should == false
     end
   end
 
@@ -896,13 +896,13 @@ describe SafetyPin::Node do
     end
 
     let(:foo_node) do
-      blueprint = SafetyPin::NodeBlueprint.new(:path => "/content/foo")
-      SafetyPin::Node.create(blueprint)
+      blueprint = NodeBlueprint.new(:path => "/content/foo")
+      Node.create(blueprint)
     end
 
     let(:bar_node) do
-      blueprint = SafetyPin::NodeBlueprint.new(:path => "/content/bar")
-      SafetyPin::Node.create(blueprint)
+      blueprint = NodeBlueprint.new(:path => "/content/bar")
+      Node.create(blueprint)
     end
 
     describe "#order_after" do
@@ -924,7 +924,7 @@ describe SafetyPin::Node do
         end
 
         it "raises an error when given a node that is not a sibling" do
-          expect { foo_node.order_after(SafetyPin::Node.find("/tmp")) }.to raise_error(NodeError)
+          expect { foo_node.order_after(Node.find("/tmp")) }.to raise_error(NodeError)
           expect { foo_node.order_after("idontexist") }.to raise_error(NodeError)
         end
       end
@@ -950,7 +950,7 @@ describe SafetyPin::Node do
       end
 
       it "raises an error when given a node that is not a sibling" do
-        expect { foo_node.order_before(SafetyPin::Node.find("/tmp")) }.to raise_error(NodeError)
+        expect { foo_node.order_before(Node.find("/tmp")) }.to raise_error(NodeError)
         expect { foo_node.order_before("idontexist") }.to raise_error(NodeError)
       end
     end
@@ -958,8 +958,8 @@ describe SafetyPin::Node do
 
   describe "#rename" do
     let(:node) do
-      blueprint = SafetyPin::NodeBlueprint.new(:path => "/content/foo")
-      SafetyPin::Node.create(blueprint)
+      blueprint = NodeBlueprint.new(:path => "/content/foo")
+      Node.create(blueprint)
     end
 
     it "changes the name of the node" do
@@ -969,8 +969,8 @@ describe SafetyPin::Node do
     end
 
     it "raises an error when the destination node name is already taken" do
-      SafetyPin::Node.create(SafetyPin::NodeBlueprint.new(:path => "/content/bar"))
-      expect { node.rename("bar") }.to raise_error(SafetyPin::NodeError)
+      Node.create(NodeBlueprint.new(:path => "/content/bar"))
+      expect { node.rename("bar") }.to raise_error(NodeError)
     end
   end
 
