@@ -32,6 +32,10 @@ module SafetyPin
       @@session
     end
 
+    def self.save
+      session.save
+    end
+
     def self.parse_hostname(hostname)
       url = URI.parse(hostname)
       url.path = "/crx/server" if url.path == ""
