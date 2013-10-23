@@ -449,7 +449,7 @@ module SafetyPin
       write_attribute(name, nil)
     end
 
-    def move(dest_parent_path)
+    def move_within(dest_parent_path)
       dest_path = Pathname(dest_parent_path) + name
       raise NodeError.new("Existing node at destination path #{dest_path.inspect}") if Node.exists? dest_path
       session.move(path, dest_path.to_s)

@@ -832,7 +832,7 @@ describe Node do
     end
   end
 
-  describe "#move" do
+  describe "#move_within" do
     before do
       if tmp_node = Node.find("/tmp/foo")
         tmp_node.destroy
@@ -855,7 +855,7 @@ describe Node do
     end
 
     it "moves the node to beneath the destination path" do
-      node.move("/tmp")
+      node.move_within("/tmp")
       node.save
       node.refresh
       node.path.should == "/tmp/foo"
@@ -864,7 +864,7 @@ describe Node do
     it "raises an error when a node exists at the destination" do
       Node.create(NodeBlueprint.new(:path => "/tmp/bar"))
       Node.create(NodeBlueprint.new(:path => "/tmp/bar/#{node.name}"))
-      expect { node.move("/tmp/bar") }.to raise_error(NodeError)
+      expect { node.move_within("/tmp/bar") }.to raise_error(NodeError)
     end
   end
 
