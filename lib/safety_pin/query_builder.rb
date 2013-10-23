@@ -6,7 +6,7 @@ module SafetyPin
     def self.execute(query)
       response = RestClient.get url, {params: query}
       results = JSON.parse(response)
-      paths = results.fetch("hits").map {|hit| hit["path"] }
+      paths = results.fetch("hits").map {|hit| hit.fetch("path") }
       paths.map {|path| Node.find(path) }
     end
 

@@ -841,6 +841,7 @@ describe Node do
     end
 
     after do
+      JCR.session.refresh(false)
       ["/tmp/foo", "/tmp/bar"].each do |path|
         if node = Node.find(path)
           node.destroy
@@ -865,6 +866,15 @@ describe Node do
       Node.create(NodeBlueprint.new(:path => "/tmp/bar"))
       Node.create(NodeBlueprint.new(:path => "/tmp/bar/#{node.name}"))
       expect { node.move_within("/tmp/bar") }.to raise_error(NodeError)
+    end
+
+    context "when given options" do
+      it "moves node beneath destination path and renames when :auto_rename option is true" do
+        Node.create(NodeBlueprint.new(:path => "/tmp/bar"))
+        Node.create(NodeBlueprint.new(:path => "/tmp/bar/#{node.name}"))
+        node.move_within("/tmp/bar", auto_rename: true)
+        node.name.should == "foo1"
+      end
     end
   end
 

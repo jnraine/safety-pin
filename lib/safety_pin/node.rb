@@ -449,10 +449,27 @@ module SafetyPin
       write_attribute(name, nil)
     end
 
-    def move_within(dest_parent_path)
-      dest_path = Pathname(dest_parent_path) + name
+    def move_within(dest_parent_path, options = {})
+      if options.fetch(:auto_rename, false)
+        new_name = available_name_within(dest_parent_path)
+      else
+        new_name = name
+      end
+
+      dest_path = Pathname(dest_parent_path) + new_name
       raise NodeError.new("Existing node at destination path #{dest_path.inspect}") if Node.exists? dest_path
       session.move(path, dest_path.to_s)
+    end
+
+    def available_name_within(dest_parent_path)
+      new_path = Pathname(dest_parent_path) + name
+      index = 1
+      while Node.exists? new_path
+        new_path = Pathname(dest_parent_path) + "#{name}#{index}"
+        index += 1
+      end
+
+      new_path
     end
 
     def rename(new_name)
