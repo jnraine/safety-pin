@@ -114,6 +114,23 @@ module SafetyPin
       raise NodeError.new("Root node does not have parent") if path == "/"
       Node.new(j_node.parent)
     end
+
+    def parents
+      parents = []
+
+      next_parent = self.parent
+      parents << next_parent
+      while !next_parent.root?
+        next_parent = next_parent.parent
+        parents << next_parent
+      end
+
+      parents
+    end
+
+    def root?
+      path == "/"
+    end
     
     def children
       child_nodes = []
@@ -424,13 +441,58 @@ module SafetyPin
       "#<#{self.class} path=#{path}>"
     end
 
+    def to_s
+      inspect
+    end
+
     def remove_attribute(name)
       write_attribute(name, nil)
     end
 
     def move(dest_parent_path)
       dest_path = Pathname(dest_parent_path) + name
-      session.move("/content/foo", dest_path.to_s)
+      raise NodeError.new("Existing node at destination path #{dest_path.inspect}") if Node.exists? dest_path
+      session.move(path, dest_path.to_s)
+    end
+
+    def rename(new_name)
+      dest_path = Pathname(path).parent + new_name
+      raise NodeError.new("Node name #{new_name.inspect} already taken") if Node.exists? dest_path
+      session.move(path, dest_path.to_s)
+    end
+
+    def order_before(sibling_name_or_sibling_node)
+      sibling_name = extract_sibling_name(sibling_name_or_sibling_node)
+      parent.j_node.order_before(name, sibling_name) # put this before that
+    end
+
+    def order_after(sibling_name_or_sibling_node)
+      sibling_name = extract_sibling_name(sibling_name_or_sibling_node)
+      parent.j_node.order_before(name, sibling_name) # put before sibling (preserving the original order of the sibling)
+      parent.j_node.order_before(sibling_name, name) # put that before this
+    end
+
+    def extract_sibling_name(sibling_name_or_sibling_node)
+      if sibling_name_or_sibling_node.respond_to? :name
+        unless siblings?(sibling_name_or_sibling_node)
+          raise NodeError.new("#{sibling_name_or_sibling_node} not a sibling to #{self}")
+        end
+        sibling_name = sibling_name_or_sibling_node.name
+      else
+        unless siblings.map(&:name).include?(sibling_name_or_sibling_node)
+          raise NodeError.new("Sibling named #{sibling_name_or_sibling_node.inspect} not found")
+        end
+        sibling_name = sibling_name_or_sibling_node.to_s
+      end
+    end
+
+    def siblings?(sibling)
+      Pathname(path).parent == Pathname(sibling.path).parent
+    end
+
+    def siblings
+      siblings = parent.children
+      siblings.delete_if {|sibling| sibling.path == path}
     end
   end
   

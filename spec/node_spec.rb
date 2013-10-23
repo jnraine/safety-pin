@@ -1,5 +1,5 @@
 require 'spec_helper.rb'
-
+module SafetyPin
 describe SafetyPin::Node do
   describe ".find" do
     context "given a node name" do
@@ -840,6 +840,15 @@ describe SafetyPin::Node do
       end
     end
 
+    after do
+      ["/tmp/foo", "/tmp/bar"].each do |path|
+        if node = SafetyPin::Node.find(path)
+          node.destroy
+          node.save
+        end
+      end
+    end
+
     let(:node) do
       blueprint = SafetyPin::NodeBlueprint.new(:path => "/content/foo", properties: {"foo" => "bar", "baz" => "qux"})
       SafetyPin::Node.create(blueprint)
@@ -850,8 +859,131 @@ describe SafetyPin::Node do
       node.save
       node.refresh
       node.path.should == "/tmp/foo"
-      node.destroy
-      node.save
+    end
+
+    it "raises an error when a node exists at the destination" do
+      SafetyPin::Node.create(SafetyPin::NodeBlueprint.new(:path => "/tmp/bar"))
+      SafetyPin::Node.create(SafetyPin::NodeBlueprint.new(:path => "/tmp/bar/#{node.name}"))
+      expect { node.move("/tmp/bar") }.to raise_error(SafetyPin::NodeError)
     end
   end
+
+  describe "#parents" do
+    let(:node) do
+      blueprint = SafetyPin::NodeBlueprint.new(:path => "/content/foo", properties: {"foo" => "bar", "baz" => "qux"})
+      SafetyPin::Node.create(blueprint)
+    end
+
+    it "returns all parents up to and including the root node" do
+      node.parents.length.should == 2 # /content and /
+    end
+  end
+
+  describe "#root?" do
+    it "returns true when node is root node" do
+      SafetyPin::Node.find("/").root?.should == true
+    end
+
+    it "returns false for any other node" do
+      SafetyPin::Node.find("/content").root?.should == false
+    end
+  end
+
+  context "node ordering" do
+    before do # create in order
+      foo_node
+      bar_node
+    end
+
+    let(:foo_node) do
+      blueprint = SafetyPin::NodeBlueprint.new(:path => "/content/foo")
+      SafetyPin::Node.create(blueprint)
+    end
+
+    let(:bar_node) do
+      blueprint = SafetyPin::NodeBlueprint.new(:path => "/content/bar")
+      SafetyPin::Node.create(blueprint)
+    end
+
+    describe "#order_after" do
+      it "places node after a sibling given by name" do
+        foo_node.order_after("bar")
+        child_node_order = Hash[foo_node.parent.children.map(&:name).map.with_index.to_a]
+        foo_position = child_node_order["foo"]
+        bar_position = child_node_order["bar"]
+        foo_position.should be > bar_position # foo comes after bar
+      end
+
+      context "when given a node" do
+        it "places node after a sibling node" do
+          foo_node.order_after(bar_node)
+          child_node_order = Hash[foo_node.parent.children.map(&:name).map.with_index.to_a]
+          foo_position = child_node_order["foo"]
+          bar_position = child_node_order["bar"]
+          foo_position.should be > bar_position # foo comes after bar
+        end
+
+        it "raises an error when given a node that is not a sibling" do
+          expect { foo_node.order_after(SafetyPin::Node.find("/tmp")) }.to raise_error(NodeError)
+          expect { foo_node.order_after("idontexist") }.to raise_error(NodeError)
+        end
+      end
+    end
+
+    describe "#order_before" do
+      it "places node before a sibling when given by name" do
+        bar_node.order_before("foo")
+        child_node_order = Hash[foo_node.parent.children.map(&:name).map.with_index.to_a]
+        foo_position = child_node_order["foo"]
+        bar_position = child_node_order["bar"]
+        foo_position.should be > bar_position # foo comes after bar
+      end
+
+      context "when given a node" do
+        it "places node before a sibling node" do
+          bar_node.order_before(foo_node)
+          child_node_order = Hash[foo_node.parent.children.map(&:name).map.with_index.to_a]
+          foo_position = child_node_order["foo"]
+          bar_position = child_node_order["bar"]
+          foo_position.should be > bar_position # foo comes after bar
+        end
+      end
+
+      it "raises an error when given a node that is not a sibling" do
+        expect { foo_node.order_before(SafetyPin::Node.find("/tmp")) }.to raise_error(NodeError)
+        expect { foo_node.order_before("idontexist") }.to raise_error(NodeError)
+      end
+    end
+  end
+
+  describe "#rename" do
+    let(:node) do
+      blueprint = SafetyPin::NodeBlueprint.new(:path => "/content/foo")
+      SafetyPin::Node.create(blueprint)
+    end
+
+    it "changes the name of the node" do
+      node.name.should == "foo"
+      node.rename("bob")
+      node.name.should == "bob"
+    end
+
+    it "raises an error when the destination node name is already taken" do
+      SafetyPin::Node.create(SafetyPin::NodeBlueprint.new(:path => "/content/bar"))
+      expect { node.rename("bar") }.to raise_error(SafetyPin::NodeError)
+    end
+  end
+
+  describe "#siblings" do
+    it "returns all siblings" do
+      pending "haven't gotten there"
+    end
+  end
+
+  describe "#siblings?" do
+    it "return true when given node is a sibling" do
+      pending "haven't gotten there"
+    end
+  end
+end
 end

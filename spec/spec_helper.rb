@@ -3,14 +3,19 @@ $:<<File.join(File.dirname(__FILE__), '/../lib')
 require 'safety_pin'
 
 RSpec.configure do |config|
-  def destroy_foo
+  def safe_destroy(path)
     if SafetyPin::JCR.logged_in?
-      node = SafetyPin::Node.find("/content/foo")
+      node = SafetyPin::Node.find(path)
       unless node.nil?
         node.reload if node.changed?
         node.destroy
       end
     end
+  end
+  
+  def destroy_test_nodes
+    safe_destroy("/content/foo")
+    safe_destroy("/content/bar")
   end
 
   config.before(:all) do
@@ -26,10 +31,10 @@ RSpec.configure do |config|
   end
   
   config.after do
-    destroy_foo
+    destroy_test_nodes
   end
 
   config.before do
-    destroy_foo
+    destroy_test_nodes
   end
 end
