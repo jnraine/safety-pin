@@ -11,6 +11,9 @@ module SafetyPin
     rescue RestClient::ExceptionWithResponse => e
       query_string = query.map {|k,v| "#{k}=#{v}"}.join("&")
       raise QueryBuilderError.new("returned error status #{e.http_code} for query #{query_string.inspect}")
+    rescue JSON::ParserError => e
+      query_string = query.map {|k,v| "#{k}=#{v}"}.join("&")
+      raise QueryBuilderError.new("Unable to parse response for query #{query_string.inspect} as JSON - #{e.message}")
     end
 
     def self.url
