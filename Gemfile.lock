@@ -1,3 +1,9 @@
+PATH
+  remote: .
+  specs:
+    safety-pin (0.1.6)
+      rest-client
+
 GEM
   remote: http://rubygems.org/
   specs:
@@ -19,5 +25,5 @@ PLATFORMS
   ruby
 
 DEPENDENCIES
-  rest-client
   rspec (~> 2.10.0)
+  safety-pin!

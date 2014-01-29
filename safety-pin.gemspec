@@ -14,4 +14,7 @@ Gem::Specification.new do |gem|
   gem.name          = "safety-pin"
   gem.require_paths = ["lib"]
   gem.version       = SafetyPin::VERSION
+
+  gem.add_runtime_dependency "rest-client"
+  gem.add_development_dependency "rspec", "~> 2.10.0"
 end

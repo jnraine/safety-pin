@@ -1,4 +1,3 @@
 source "http://rubygems.org"
 
-gem "rspec", "~> 2.10.0"
-gem "rest-client"
+gemspec
