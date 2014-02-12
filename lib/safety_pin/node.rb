@@ -243,7 +243,7 @@ module SafetyPin
         values = value
         val_fact = value_factory
         j_values = []
-        values.each do |value|
+        values.compact.each do |value|
           j_values << val_fact.create_value(value.to_java)
         end
         j_node.set_property(name, j_values.to_java(Java::JavaxJcr::Value))

@@ -339,6 +339,24 @@ describe Node do
           node["foo"].should eql(["one", "two"])
         end
       end
+
+      it "sets to empty array when given one" do
+        node["foo"] = []
+        node.save; node.refresh
+        expect(node["foo"]).to eq([])
+      end
+
+      it "does not raise an error when given an array containing nil values" do
+        expect { node["foo"] = [nil, nil] }.not_to raise_error(java.lang.NullPointerException)
+      end
+
+      context "arrays with nil values" do
+        it "does not raise an error when given an array containing nil values" do
+          node["foo"] = ["hi", "yo", nil]
+          node.save; node.reload
+          expect(node["foo"]).to eq(["hi", "yo"])
+        end
+      end
     end
     
     context "given a null value" do
